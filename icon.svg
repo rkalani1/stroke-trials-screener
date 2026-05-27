@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Vibrant Blue-to-Indigo Gradient for Background -->
+    <radialGradient id="bg-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </radialGradient>
+    
+    <!-- Neon Indigo-to-Cyan Gradient for Highlight Cross -->
+    <linearGradient id="cross-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+
+    <!-- Glowing Cyan Gradient for Brain Detail -->
+    <linearGradient id="brain-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    
+    <!-- Soft Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Dark Background Plate with Smooth Borders -->
+  <rect width="512" height="512" rx="112" fill="url(#bg-grad)"/>
+
+  <!-- Glowing Aura behind the Cross -->
+  <path d="M 200,90 H 312 V 200 H 422 V 312 H 312 V 422 H 200 V 312 H 90 V 200 H 200 Z" 
+        fill="url(#cross-grad)" opacity="0.15" filter="url(#glow)"/>
+
+  <!-- Main Clinical Cross (Styled with HSL Neon Gradient) -->
+  <path d="M 196,80 Q 196,70 206,70 H 306 Q 316,70 316,80 V 196 H 432 Q 442,196 442,206 V 306 Q 442,316 432,316 H 316 V 432 Q 316,442 306,442 H 206 Q 196,442 196,432 V 316 H 80 Q 70,316 70,306 V 206 Q 70,196 80,196 H 196 Z" 
+        fill="url(#cross-grad)"/>
+
+  <!-- Inside Dark Inset to Make it Pop -->
+  <path d="M 210,104 H 302 V 210 H 408 V 302 H 302 V 408 H 210 V 302 H 104 V 210 H 210 Z" 
+        fill="#0f172a" opacity="0.9"/>
+
+  <!-- Stylized Brain Silhouette (Symbolizing Neurology/Stroke) Inside Cross -->
+  <g transform="translate(196, 196) scale(0.234)" filter="url(#glow)">
+    <!-- Left Hemisphere -->
+    <path d="M 240,430 C 130,430 80,360 80,260 C 80,170 120,120 200,100 C 210,98 230,105 240,110 C 240,170 240,330 240,430 Z" 
+          fill="url(#brain-grad)"/>
+    <!-- Right Hemisphere -->
+    <path d="M 260,430 C 370,430 420,360 420,260 C 420,170 380,120 300,100 C 290,98 270,105 260,110 C 260,170 260,330 260,430 Z" 
+          fill="url(#brain-grad)" opacity="0.85"/>
+          
+    <!-- Synaptic Connection Dots / Network Overlay -->
+    <circle cx="200" cy="180" r="12" fill="#ffffff" opacity="0.9"/>
+    <circle cx="150" cy="270" r="10" fill="#ffffff" opacity="0.9"/>
+    <circle cx="210" cy="350" r="14" fill="#ffffff" opacity="0.9"/>
+    <circle cx="320" cy="180" r="12" fill="#ffffff" opacity="0.9"/>
+    <circle cx="360" cy="290" r="10" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Connection lines -->
+    <line x1="200" y1="180" x2="150" y2="270" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
+    <line x1="150" y1="270" x2="210" y2="350" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
+    <line x1="320" y1="180" x2="360" y2="290" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
+    <line x1="200" y1="180" x2="320" y2="180" stroke="#ffffff" stroke-width="4" opacity="0.4"/>
+  </g>
+</svg>
