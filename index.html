@@ -1206,8 +1206,8 @@
                 <h2 class="section-title">Stroke Trials Protocol Database</h2>
                 
                 <div class="search-container">
-                    <input type="text" id="db_search" class="reset-btn" style="flex:1; text-align:left; padding:0.5rem; font-size:0.8rem;" placeholder="Search study acronym, full name, or criteria..." oninput="filterDatabase()">
-                    <select id="db_filter" style="width:140px;" onchange="filterDatabase()">
+                    <input type="text" id="db_search" class="reset-btn" style="flex:1; text-align:left; padding:0.5rem; font-size:0.8rem;" placeholder="Search study acronym, full name, or criteria..." aria-label="Search study acronym, full name, or criteria" oninput="filterDatabase()">
+                    <select id="db_filter" style="width:140px;" aria-label="Filter by enrollment status" onchange="filterDatabase()">
                         <option value="all">All Statuses</option>
                         <option value="enrolling">Enrolling</option>
                         <option value="soon">Enrolling Soon</option>
