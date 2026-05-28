@@ -1504,7 +1504,7 @@
                 sourceHypothesisText: "A prospective, multi-center, randomized, controlled, blinded assessor, adaptive enrichment design, clinical trial to evaluate the utility of early/ultra-early SCUBA evacuation in patients with BGH and LKW-to-randomization time ≤ 16 hours.",
                 status: "soon",
                 sourceCompletenessStatus: "first_pass",
-                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov also requires CTA/MRA without vascular lesion, expected surgery start <120 minutes from randomization, coagulation/lab review, goals-of-care consent, and other exclusions not fully encoded here."],
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov overall status as of 2026-05-28: NOT_YET_RECRUITING; listed study start date 2026-05-15.", "CT.gov also requires CTA/MRA without vascular lesion, expected surgery start <120 minutes from randomization, coagulation/lab review, goals-of-care consent, and other exclusions not fully encoded here."],
                 timeCategory: "hyperacute",
                 enrollmentWindowText: "≤ 16 hours",
                 externalMetadata: { nct: "NCT07260916", registryUrl: "https://clinicaltrials.gov/study/NCT07260916", verificationDate: "2026-05-28" },
@@ -1566,7 +1566,7 @@
                 sourceHypothesisText: "A Phase 3 randomized trial evaluating cilostazol for prevention of recurrent stroke in patients with stroke or TIA within 180 days who are taking aspirin or clopidogrel, but not both.",
                 status: "soon",
                 sourceCompletenessStatus: "first_pass",
-                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "Public CT.gov eligibility text for NCT07174414 does not state the older draft's stroke-subtype or TIA risk-score thresholds; those criteria are not used in this demo."],
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov overall status as of 2026-05-28: NOT_YET_RECRUITING; listed study start date 2026-08.", "Public CT.gov eligibility text for NCT07174414 does not state the older draft's stroke-subtype or TIA risk-score thresholds; those criteria are not used in this demo."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "≤ 180 days",
                 externalMetadata: { nct: "NCT07174414", registryUrl: "https://clinicaltrials.gov/study/NCT07174414", verificationDate: "2026-05-28" },
@@ -1707,7 +1707,6 @@
                     if (p.exEgfr35) errors.push("eGFR < 35");
                     if (p.exMriContraindication) errors.push("Excludes MRI/gadolinium contraindications");
                     if (p.exRecentSurgery30d) errors.push("Excludes surgery within 30 days prior to stroke onset");
-                    if (p.exUnstableCondition) errors.push("Excludes unstable medical condition");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
@@ -1758,7 +1757,6 @@
                     if (p.exEgfr35) errors.push("eGFR < 35");
                     if (p.exMriContraindication) errors.push("Excludes MRI/gadolinium contraindications");
                     if (p.exBilateralCarotidRevasc) errors.push("Excludes history of bilateral carotid artery revascularization");
-                    if (p.exUnstableCondition) errors.push("Excludes unstable medical condition");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
@@ -1791,7 +1789,7 @@
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "ICH",
+                    "Intracerebral hemorrhage (ICH), including primary intraventricular hemorrhage, confirmed by brain CT or MRI",
                     "non-valvular Afib",
                     "can be randomized within 14-180 days of stroke onset"
                 ],
