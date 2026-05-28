@@ -1066,8 +1066,8 @@
 </head>
 <body>
     <div id="app_main_wrapper">
-    <div style="background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:0.65rem 1rem;font-size:0.9rem;">
-        <strong>Synthetic public demo only.</strong> Do not enter real patient identifiers, PHI, or operational clinical data. Public GitHub Pages use is educational and not an official system; URL prefill is disabled here.
+    <div style="background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:0.65rem 1rem;font-size:0.9rem;line-height:1.4;">
+        <strong>Synthetic public demo only.</strong> Do not enter real patient identifiers, PHI, or operational clinical data. This public GitHub Pages version is educational, not an official clinical or recruitment system. Registry matches are first-pass screens only and must be confirmed against the full ClinicalTrials.gov record and approved local study materials before clinical action.
     </div>
 
     <!-- Header bar -->
@@ -1299,7 +1299,6 @@
         let p_ich_location = 'unselected';
         let p_volume = 'unselected';
         let p_statin = 'unselected';
-        let p_abcd2 = 'unselected';
         let p_language = 'unselected';
         let p_rehab = 'unselected';
         let p_self_consent = 'unselected';
@@ -1318,17 +1317,18 @@
         let exclusionsState = {};
 
         // Canonical trials data structure from source
+        const CTGOV_FIRST_PASS_NOTE = "First-pass ClinicalTrials.gov summary: not all registry criteria, protocol details, local activation requirements, or consent rules are encoded in this public demo.";
         const trials = [
             {
                 acronym: "SISTER",
                 exactFullStudyName: "Strategy for Improving Stroke Treatment Response",
                 sourceHypothesisText: "A Phase-2, prospective, randomized, placebo-controlled, blinded, dose finding trial that aims to determine the safety and preliminary efficacy of TS23, a monoclonal antibody against the alpha-2 antiplasmin (a2-AP), in acute ischemic stroke.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov also requires favorable perfusion mismatch/core imaging and study drug within 120 minutes of qualifying perfusion imaging."],
                 timeCategory: "hyperacute",
                 enrollmentWindowText: "4.5 – 24 hours",
-                externalMetadata: { nct: "NCT05948566", registryUrl: "https://clinicaltrials.gov/study/NCT05948566", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT05948566", registryUrl: "https://clinicaltrials.gov/study/NCT05948566", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Evaluates TS23 mAb (anti-alpha-2-antiplasmin) in AIS presenting within 4.5-24h without thrombolysis or EVT clot engagement.",
                 pathway: "Consult Stroke Research Coordinator / On-Call Stroke Fellow",
                 noContactInfo: true,
@@ -1336,7 +1336,8 @@
                     "Anterior circulation acute ischemic stroke",
                     "Onset within 4.5-24 hours",
                     "NIHSS ≥ 4",
-                    "ASPECTS 6 or more on CT"
+                    "ASPECTS 6 or more on CT or ASPECTS 7 or more on MRI",
+                    "Favorable perfusion imaging mismatch/core profile"
                 ],
                 exactExclusionCriteria: [
                     "Received thrombolysis",
@@ -1372,7 +1373,8 @@
                         "Confirm stroke is in the anterior circulation (anterior circulation stroke is required)",
                         !p.exThrombolysis ? "Confirm no prior thrombolysis administered" : "",
                         !p.exEvt ? "Confirm no prior EVT with clot engagement" : "",
-                        !p.exStroke90d ? "Confirm no stroke in the past 90 days" : ""
+                        !p.exStroke90d ? "Confirm no stroke in the past 90 days" : "",
+                        "Confirm favorable CT/MR perfusion mismatch/core criteria and study-drug timing per protocol"
                     ].filter(Boolean);
                 }
             },
@@ -1381,17 +1383,19 @@
                 exactFullStudyName: "StrokeNet Thrombectomy Endovascular Platform",
                 sourceHypothesisText: "STEP is a Randomized, Multifactorial, Adaptive, Registry-leveraged, Platform trial that seeks to optimize the care of patients with acute ischemic stroke (AIS) due to large or medium vessel occlusions (LVOs and MVOs). The currently open domain looks to expand indication for EVT.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires presentation to the enrolling hospital within 24 hours and arterial puncture within 2 hours of qualifying imaging; this demo does not encode every STEP domain exclusion."],
                 timeCategory: "hyperacute",
                 enrollmentWindowText: "⚡ EVT Window (≤ 24 hours)",
-                externalMetadata: { nct: "NCT06289985", registryUrl: "https://clinicaltrials.gov/study/NCT06289985", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT06289985", registryUrl: "https://clinicaltrials.gov/study/NCT06289985", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Optimizes endovascular therapy for low NIHSS LVOs or non-dominant MVOs. Excludes dominant M2 branch.",
                 pathway: "Consult Stroke Research Coordinator / On-Call Stroke Fellow or Endovascular Coordinator",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "Branch 1: LVO patients with mild deficits/low NIHSS; NIHSS 0-5, Complete occlusion of the intracranial ICA or M1 MCA",
-                    "Branch 2: MVO/DMVO patients with Non-dominant/Co-dominant M2 and M3 occlusions; NIHSS ≥ 8"
+                    "Age 18 years or older and pre-stroke mRS 0-2",
+                    "Presentation to enrolling hospital within 24 hours and arterial puncture within 2 hours of qualifying imaging",
+                    "Branch 1: LVO patients with mild deficits/low NIHSS; NIHSS 0-5 and complete occlusion of the intracranial ICA or M1 MCA",
+                    "Branch 2: MVO/DMVO patients with non-dominant/co-dominant M2 or M3 occlusions; NIHSS ≥ 8"
                 ],
                 exactExclusionCriteria: [
                     "CT ASPECT score <6",
@@ -1401,7 +1405,8 @@
                 check: (p) => {
                     const errors = [];
                     if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
-                    if (p.aspects < 6) errors.push("CT ASPECTS < 6");
+                    if (p.aspects < 6) errors.push("CT ASPECTS < 6 / MRI ASPECTS < 7");
+                    if (p.preMrs > 2) errors.push("Pre-stroke mRS > 2");
                     
                     const isB1 = (p.vessel === 'ica_m1' && p.nihss <= 5);
                     const isB2 = (p.vessel === 'm2_m3_nd' && p.nihss >= 8);
@@ -1424,7 +1429,8 @@
                     
                     return [
                         "Ischemic Stroke classification selected",
-                        (p.aspects !== 'unselected' && p.aspects >= 6) ? 'ASPECTS is ' + p.aspects + ' (meets ≥ 6)' : "",
+                        (p.aspects !== 'unselected' && p.aspects >= 6) ? 'ASPECTS is ' + p.aspects + ' (meets CT ≥ 6 threshold)' : "",
+                        p.preMrs <= 2 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 2)' : "",
                         branchMatchText
                     ].filter(Boolean);
                 },
@@ -1432,7 +1438,8 @@
                     return [
                         !p.exTandem ? "Confirm no tandem occlusions" : "",
                         !p.exMultipleTerritories ? "Confirm no acute occlusions in multiple territories" : "",
-                        "Confirm vessel anatomy on CTA (no dominant M2/M3 branch)"
+                        "Confirm vessel anatomy on CTA/MRA (no dominant M2/M3 branch)",
+                        "Confirm enrolling-hospital presentation and arterial puncture timing per STEP protocol"
                     ].filter(Boolean);
                 }
             },
@@ -1441,11 +1448,11 @@
                 exactFullStudyName: "Treatment with Endovascular Intervention for Stroke Patients with Existing Disability",
                 sourceHypothesisText: "A prospective, observational study for persons with a pre-stroke mRS 3-4 experiencing an LVO-AIS, comparing the effectiveness of EVT to MMM.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
-                timeCategory: "hyperacute",
-                enrollmentWindowText: "≤ 24 hours (Presentation)",
-                externalMetadata: { nct: "NCT04856696", registryUrl: "https://clinicaltrials.gov/study/NCT04856696", verificationDate: "2026-05-19" },
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "Assessment of pre-stroke disability during hospitalization and investigator determination that disability is not temporary are not encoded in this demo."],
+                timeCategory: "acute_subacute",
+                enrollmentWindowText: "Presentation ≤ 24 hours",
+                externalMetadata: { nct: "NCT05911568", registryUrl: "https://clinicaltrials.gov/study/NCT05911568", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Cohort study comparing EVT to Medical Management in LVO-AIS with pre-stroke mRS 3-4.",
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
                 noContactInfo: true,
@@ -1453,12 +1460,13 @@
                     "Acute ischemic stroke presenting within 24 hours of onset",
                     "Caused by occlusion of ICA, M1, or dominant M2",
                     "mRS 3-4 for at least 3 months prior to stroke onset",
-                    "NIHSS ≥ 6",
-                    "Can be enrolled within 5 days of presentation"
+                    "Presenting CT ASPECTS ≥ 3 or MRI ASPECTS ≥ 4",
+                    "NIHSS ≥ 6"
                 ],
                 exactExclusionCriteria: [
                     "Terminal illness at time of stroke",
-                    "Stroke onset during acute inpatient facility stay"
+                    "Assessment of pre-stroke functional status cannot be performed during the hospital stay",
+                    "Pre-stroke disability deemed temporary by the investigator"
                 ],
                 check: (p) => {
                     const errors = [];
@@ -1466,10 +1474,9 @@
                     if (p.vessel !== 'ica_m1' && p.vessel !== 'dominant_m2') errors.push("Requires ICA, M1, or dominant M2 occlusion");
                     if (p.preMrs !== 3 && p.preMrs !== 4) errors.push("Pre-stroke mRS must be exactly 3 or 4");
                     if (p.nihss < 6) errors.push("NIHSS < 6");
+                    if (p.aspects < 3) errors.push("CT ASPECTS < 3 / MRI ASPECTS < 4");
                     if (!p.presentedWithin24h) errors.push("Did not present within 24h of onset");
-                    if (p.onsetHours > 120) errors.push("LKW-to-screening > 5 days");
                     if (p.exTerminalIllness) errors.push("Excludes terminal illness");
-                    if (p.exInpatientOnset) errors.push("Excludes inpatient stroke onset");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
@@ -1478,16 +1485,16 @@
                         (p.vessel === 'ica_m1' || p.vessel === 'dominant_m2') ? 'Vessel is ' + p.vessel : "",
                         (p.preMrs === 3 || p.preMrs === 4) ? 'Pre-stroke mRS is ' + p.preMrs : "",
                         p.nihss >= 6 ? 'NIHSS is ' + p.nihss + ' (meets ≥ 6)' : "",
-                        p.presentedWithin24h === true ? "Presented within 24h of onset" : "",
-                        p.onsetHours <= 120 ? "Within 5 days of presentation window" : ""
+                        p.aspects >= 3 ? 'ASPECTS is ' + p.aspects + ' (meets CT ≥ 3 threshold)' : "",
+                        p.presentedWithin24h === true ? "Presented to study hospital within 24h of LKW" : ""
                     ].filter(Boolean);
                 },
                 pendingCriteriaText: (p) => {
                     return [
                         "Confirm patient arrived at the facility within 24 hours of stroke onset (presented within 24h)",
                         !p.exTerminalIllness ? "Confirm no terminal illness" : "",
-                        !p.exInpatientOnset ? "Confirm stroke onset was not during acute inpatient stay" : "",
-                        "Confirm pre-stroke disability has been stable for at least 3 months"
+                        "Confirm pre-stroke disability has been stable for at least 3 months",
+                        "Confirm pre-stroke functional status can be assessed during hospitalization and is not temporary"
                     ].filter(Boolean);
                 }
             },
@@ -1496,18 +1503,22 @@
                 exactFullStudyName: "Minimally Invasive Neuroendoscopic Ultra-Early Targeted ICH Evacuation",
                 sourceHypothesisText: "A prospective, multi-center, randomized, controlled, blinded assessor, adaptive enrichment design, clinical trial to evaluate the utility of early/ultra-early SCUBA evacuation in patients with BGH and LKW-to-randomization time ≤ 16 hours.",
                 status: "soon",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov also requires CTA/MRA without vascular lesion, expected surgery start <120 minutes from randomization, coagulation/lab review, goals-of-care consent, and other exclusions not fully encoded here."],
                 timeCategory: "hyperacute",
                 enrollmentWindowText: "≤ 16 hours",
-                externalMetadata: { nct: "NCT07260916", registryUrl: "https://clinicaltrials.gov/study/NCT07260916", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT07260916", registryUrl: "https://clinicaltrials.gov/study/NCT07260916", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Ultra-early SCUBA endoscopic evacuation of basal ganglia hemorrhages (volume ≥ 20mL) within 16h.",
                 pathway: "Consult Stroke Research Coordinator / On-Call Neurosurgery Service",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Basal Ganglia hemorrhage ≥ 20mL",
                     "Within 16 hours of last known well",
-                    "NIHSS ≥ 6"
+                    "NIHSS ≥ 6",
+                    "Pre-ICH mRS 0-2",
+                    "Age 18-80 years",
+                    "CTA or MRA performed without an underlying vascular lesion",
+                    "Treating physician anticipates surgery can start <120 minutes from randomization"
                 ],
                 exactExclusionCriteria: [
                     "Suspected secondary cause for ICH",
@@ -1523,6 +1534,8 @@
                     if (p.onsetHours > 16) errors.push("LKW-to-randomization > 16 hours");
                     if (p.nihss < 6) errors.push("NIHSS < 6");
                     if (p.gcs < 7) errors.push("GCS < 7");
+                    if (p.preMrs > 2) errors.push("Pre-ICH mRS > 2");
+                    if (p.age < 18 || p.age > 80) errors.push("Age must be 18-80 years");
                     if (p.exSecondaryIch) errors.push("Excludes suspected secondary cause");
                     if (p.exMidbrain) errors.push("Excludes midbrain extension");
                     return errors;
@@ -1534,78 +1547,61 @@
                         p.volume === 'bg_large' ? "Volume ≥ 20mL confirmed" : "",
                         p.onsetHours <= 16 ? "LKW-to-randomization is ≤ 16h" : "",
                         p.nihss >= 6 ? 'NIHSS is ' + p.nihss + ' (meets ≥ 6)' : "",
-                        p.gcs >= 7 ? 'GCS is ' + p.gcs + ' (meets ≥ 7)' : ""
+                        p.gcs >= 7 ? 'GCS is ' + p.gcs + ' (meets ≥ 7)' : "",
+                        p.preMrs <= 2 ? 'Pre-ICH mRS is ' + p.preMrs + ' (meets ≤ 2)' : "",
+                        (p.age >= 18 && p.age <= 80) ? 'Age is ' + p.age + ' (meets 18-80)' : ""
                     ].filter(Boolean);
                 },
                 pendingCriteriaText: (p) => {
                     return [
                         !p.exSecondaryIch ? "Confirm no secondary cause (AVM, aneurysm, tumor, SAH)" : "",
-                        !p.exMidbrain ? "Confirm no midbrain extension/involvement" : ""
+                        !p.exMidbrain ? "Confirm no midbrain extension/involvement" : "",
+                        "Confirm CTA/MRA shows no underlying vascular lesion, coagulation criteria are met, and surgical timing/goals-of-care criteria are satisfied"
                     ].filter(Boolean);
                 }
             },
             {
                 acronym: "CLARITY",
                 exactFullStudyName: "Cilostazol for Prevention of Recurrent Stroke",
-                sourceHypothesisText: "A Phase 3, randomized, double-blind, placebo-controlled, clinical trial of cilostazol in patients with a history of a non-cardioembolic ischemic stroke or high-risk TIA for the prevention of a major adverse cardiovascular event (MACE).",
+                sourceHypothesisText: "A Phase 3 randomized trial evaluating cilostazol for prevention of recurrent stroke in patients with stroke or TIA within 180 days who are taking aspirin or clopidogrel, but not both.",
                 status: "soon",
-                sourceCompletenessStatus: "partial",
-                sourceGaps: [
-                    "Inclusion criteria block is missing from source document",
-                    "clinicaltrials.gov NCT number is a template placeholder"
-                ],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "Public CT.gov eligibility text for NCT07174414 does not state the older draft's stroke-subtype or TIA risk-score thresholds; those criteria are not used in this demo."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "≤ 180 days",
-                externalMetadata: { nct: "NCT06254877", registryUrl: "https://clinicaltrials.gov/study/NCT06254877", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Phase 3 trial of cilostazol in non-cardioembolic ischemic stroke or high-risk TIA (ABCD2 ≥ 6) within 180 days.",
+                externalMetadata: { nct: "NCT07174414", registryUrl: "https://clinicaltrials.gov/study/NCT07174414", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Phase 3 trial of cilostazol in stroke or TIA within 180 days while taking aspirin or clopidogrel, but not both.",
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "(stroke type, severity, enrollment window, etc.)"
+                    "Stroke or TIA within 180 days",
+                    "Age ≥ 40 years",
+                    "Currently taking aspirin or clopidogrel, but not both"
                 ],
                 exactExclusionCriteria: [
-                    "Ischemic stroke or high-risk TIA (ABCD2 score ≥6) within 180 days of onset",
-                    "≥40 years",
-                    "treated with standard-of-care single antiplatelet therapy with aspirin or clopidogrel"
+                    "Spontaneous brain hemorrhage within the last 2 years",
+                    "Moderate to severe heart failure",
+                    "Life expectancy < 6 months"
                 ],
                 check: (p) => {
                     const errors = [];
                     if (p.classification !== 'ischemic' && p.classification !== 'tia') {
                         errors.push("Requires Ischemic Stroke or TIA");
                     }
-                    if (p.classification === 'tia') {
-                        if (p.abcd2 === 'unselected') {
-                            errors.push("TIA requires ABCD2 score ≥ 6");
-                        } else if (p.abcd2 < 6) {
-                            errors.push("TIA requires ABCD2 score ≥ 6");
-                        }
-                    }
                     if (p.onsetDays > 180) errors.push("Stroke/TIA occurred > 180 days ago");
                     if (p.age < 40) errors.push("Age < 40");
-                    if (p.etiology === 'cardioembolic') {
-                        errors.push("Excludes cardioembolic etiology (requires non-cardioembolic)");
-                    } else if (p.etiology !== 'laa' && p.etiology !== 'lacunar' && p.etiology !== 'esus' && p.etiology !== 'other_non_cardioembolic') {
-                        errors.push("Requires confirmed non-cardioembolic etiology");
-                    }
                     if (!p.singleAntiplateletSoc) {
                         errors.push("Requires standard-of-care single antiplatelet (Aspirin or Clopidogrel)");
                     }
+                    if (p.exBrainBleed2y) errors.push("Excludes spontaneous brain hemorrhage within the last 2 years");
+                    if (p.exCongestiveHeartFailure) errors.push("Excludes moderate-to-severe heart failure / congestive heart failure");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
-                    const hasNonCardioEtiology = ['laa', 'lacunar', 'esus', 'other_non_cardioembolic'].includes(p.etiology);
                     const isWithinOnset = (p.onsetDays !== 'unselected' && p.onsetDays <= 180);
-                    
                     let explanation = '';
-                    if (p.classification === 'ischemic') {
-                        if (hasNonCardioEtiology && isWithinOnset) {
-                            explanation = "Matches because this is a non-cardioembolic ischemic stroke within 180 days";
-                        }
-                    } else if (p.classification === 'tia') {
-                        const isHighRiskTia = (p.abcd2 !== 'unselected' && p.abcd2 >= 6);
-                        if (hasNonCardioEtiology && isWithinOnset && isHighRiskTia) {
-                            explanation = "Matches because this is a high-risk TIA with ABCD2 >=6 within 180 days";
-                        }
+                    if ((p.classification === 'ischemic' || p.classification === 'tia') && isWithinOnset) {
+                        explanation = "Matches the CT.gov event-window criterion: stroke or TIA within 180 days";
                     }
                     
                     return [
@@ -1617,29 +1613,32 @@
                 pendingCriteriaText: (p) => {
                     return [
                         p.classification === 'unselected' ? "Confirm event type is Ischemic Stroke or TIA" : "",
-                        (p.classification === 'tia' && p.abcd2 === 'unselected') ? "Confirm ABCD2 score is ≥ 6" : "",
-                        p.etiology === 'unselected' ? "Confirm etiology is non-cardioembolic" : "",
-                        p.singleAntiplateletSoc === 'unselected' ? "Confirm patient is on single antiplatelet (aspirin or clopidogrel)" : "",
+                        p.singleAntiplateletSoc === 'unselected' ? "Confirm patient is on aspirin or clopidogrel, but not both" : "",
+                        !p.exBrainBleed2y ? "Confirm no spontaneous brain bleed in the past 2 years" : "",
+                        !p.exCongestiveHeartFailure ? "Confirm no moderate/severe congestive heart failure" : "",
                         "Wait for trial enrollment to officially open"
                     ].filter(Boolean);
                 }
             },
             {
                 acronym: "INTERCEPT",
-                exactFullStudyName: "Carotid Implantsfor PreveNtion of STrokE ReCurrEnce from Large Vessel Occlusion in Atrial Fibrillation Patients Treated with Oral Anticoagulation",
+                exactFullStudyName: "Carotid Implants for PreveNtion of STrokE ReCurrEnce from Large Vessel Occlusion in Atrial Fibrillation Patients Treated with Oral Anticoagulation",
                 sourceHypothesisText: "To assess the efficacy and safety of bilateral carotid filters as an adjunct to OAC in AF patients who suffered an ischemic stroke in the previous year.",
-                status: "soon",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires one of three OAC-at-index timing groups, planned VKA/DOAC use for the trial duration, SAPT plus OAC tolerability, and detailed bilateral carotid anatomy criteria not fully encoded here."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "≤ 365 days",
-                externalMetadata: { nct: "NCT05839955", registryUrl: "https://clinicaltrials.gov/study/NCT05839955", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Bilateral carotid filters in AFib patients on OAC who suffered an ischemic stroke in the previous year. Does not match TIA.",
+                externalMetadata: { nct: "NCT05723926", registryUrl: "https://clinicaltrials.gov/study/NCT05723926", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Bilateral carotid filters in patients with clinical AF and an ischemic stroke with positive neuroimaging within 52 weeks; planned OAC is required.",
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "Ischemic stroke within the past year",
-                    "history of clinical afib on OAC"
+                    "Documented history of clinical atrial fibrillation",
+                    "Ischemic stroke with positive neuroimaging within 52 weeks, in one of the CT.gov-defined OAC timing groups",
+                    "Planned VKA or DOAC use for the duration of the trial",
+                    "Able to tolerate single antiplatelet therapy plus OAC for 6 months",
+                    "Bilateral ultrasound or angiogram demonstrating protocol-defined carotid anatomy"
                 ],
                 exactExclusionCriteria: [
                     "history of ICH",
@@ -1648,15 +1647,13 @@
                 ],
                 check: (p) => {
                     const errors = [];
-                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke (Does not match TIA)");
+                    if (p.classification !== 'ischemic') errors.push("Requires ischemic stroke with positive neuroimaging (does not match TIA alone)");
                     if (p.onsetDays > 365) errors.push("Stroke onset > 365 days ago");
                     if (!p.afibHistory) errors.push("Requires clinical atrial fibrillation history");
-                    if (!p.takingOac) errors.push("Requires patient to be taking Oral Anticoagulants (OAC)");
                     if (p.exPriorIchHistory) errors.push("Excludes history of ICH");
                     if (p.exSaptContraindication) errors.push("Excludes patients with SAPT contraindication");
                     if (p.exCarotidStenosis50) errors.push("Excludes carotid/vertebral/subclavian/intracranial stenosis ≥50%");
                     if (p.exPregnancy) errors.push("Excludes pregnancy");
-                    if (p.exImplantableDevices) errors.push("Excludes pacemakers, defibrillators, or loop recorders");
                     if (p.exLifeExpectancy2y) errors.push("Excludes life expectancy < 2 years");
                     return errors;
                 },
@@ -1664,8 +1661,7 @@
                     return [
                         "Ischemic Stroke classification selected",
                         p.onsetDays <= 365 ? "Onset within past year" : "",
-                        p.afibHistory === true ? "AFib history confirmed" : "",
-                        p.takingOac === true ? "Taking Oral Anticoagulants (OAC) confirmed" : ""
+                        p.afibHistory === true ? "AFib history confirmed" : ""
                     ].filter(Boolean);
                 },
                 pendingCriteriaText: (p) => {
@@ -1673,7 +1669,7 @@
                         !p.exPriorIchHistory ? "Confirm no history of spontaneous ICH" : "",
                         !p.exSaptContraindication ? "Confirm patient can tolerate 6 months of add-on single antiplatelet" : "",
                         !p.exCarotidStenosis50 ? "Confirm no untreated carotid/vertebral/intracranial stenosis ≥50%" : "",
-                        !p.exImplantableDevices ? "Confirm no implantable pacemaker/defibrillator/loop recorder" : ""
+                        "Confirm CT.gov OAC timing group, planned VKA/DOAC duration, and bilateral carotid anatomy requirements"
                     ].filter(Boolean);
                 }
             },
@@ -1681,14 +1677,14 @@
                 acronym: "ESUS",
                 exactFullStudyName: "Qualitative model-based ESUS reclassification using cardiac and cerebral vessel wall MRI",
                 sourceHypothesisText: "Use of a cardiac vessel wall MRI along with cerebellar vessel wall imaging can help to reclassify ESUS ischemic stroke patients into either cardioembolic or large artery atherosclerosis etiology using a qualitative model.",
-                status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                status: "placeholder",
+                sourceCompletenessStatus: "not_registry_verified",
+                sourceGaps: ["No matching ClinicalTrials.gov record was found from exact acronym/title searches on 2026-05-28; this local study cannot be registry-verified on the public demo without an NCT or approved source document."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "≤ 180 days",
-                externalMetadata: { nct: "NCT05492344", registryUrl: "https://clinicaltrials.gov/study/NCT05492344", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Cardiac & cerebral vessel wall MRI to study reclassification of ESUS, cardioembolic, or LAA stroke within 6 months.",
-                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                externalMetadata: { nct: "", registryUrl: "", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Local study summary is not ClinicalTrials.gov-verified; do not use this public demo to screen or refer until an approved source/NCT is attached.",
+                pathway: "Registry/source verification required before use",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Acute ischemic stroke of ESUS, cardioembolic, or large artery atherosclerosis etiology",
@@ -1734,14 +1730,14 @@
                 acronym: "MOCHA",
                 exactFullStudyName: "Automated Intracranial Vessel Wall Analysis Pipeline for Multi-contrast Multi-platform Applications",
                 sourceHypothesisText: "Use of intracranial vessel wall imaging along with other clinical findings can be used to identify etiology of ESUS patients using a qualitative model.",
-                status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                status: "placeholder",
+                sourceCompletenessStatus: "not_registry_verified",
+                sourceGaps: ["No matching ClinicalTrials.gov record was found from exact acronym/title searches on 2026-05-28; this local study cannot be registry-verified on the public demo without an NCT or approved source document."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "≤ 120 days",
-                externalMetadata: { nct: "NCT05991823", registryUrl: "https://clinicaltrials.gov/study/NCT05991823", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Intracranial vessel wall MRI to identify underlying etiology in ESUS patients within 4 months.",
-                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                externalMetadata: { nct: "", registryUrl: "", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Local study summary is not ClinicalTrials.gov-verified; do not use this public demo to screen or refer until an approved source/NCT is attached.",
+                pathway: "Registry/source verification required before use",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Acute ischemic stroke of ESUS etiology",
@@ -1786,11 +1782,11 @@
                 exactFullStudyName: "Anticoagulation in Intracerebral Hemorrhage (ICH) Survivors for Stroke Prevention and Recovery",
                 sourceHypothesisText: "A prospective, randomized, double blind clinical trial to determine if apixaban is superior to aspirin for prevention of the composite outcome of any stroke (hemorrhagic or ischemic) or death from any cause in patients with recent ICH and AF.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov includes renal, hepatic, hematologic, pregnancy, blood pressure, allergy, competing-trial, and AVM-security exclusions not fully encoded here."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "14 – 180 days",
-                externalMetadata: { nct: "NCT03907046", registryUrl: "https://clinicaltrials.gov/study/NCT03907046", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT03907046", registryUrl: "https://clinicaltrials.gov/study/NCT03907046", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Apixaban vs Aspirin in patients with recent ICH (randomized 14-180 days post-onset) and non-valvular AFib.",
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
                 noContactInfo: true,
@@ -1833,21 +1829,23 @@
             },
             {
                 acronym: "SATURN",
-                exactFullStudyName: "[insert what study acronym is here, like below]",
+                exactFullStudyName: "Statins Use in Intracerebral Hemorrhage Patients",
                 sourceHypothesisText: "To determine the effects of continuation vs. discontinuation of statins on the risk of ICH recurrence during 24 months of follow-up in patients presenting with a spontaneous lobar lCH while taking a statin drug.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: ["Missing full study name / title details"],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov includes statin-prescriber consultation/randomization agreement, PCSK9/familial hypercholesterolemia, severe dementia, statin safety, and withdrawal-of-care exclusions not fully encoded here."],
                 timeCategory: "acute_subacute",
                 enrollmentWindowText: "≤ 7 days",
-                externalMetadata: { nct: "NCT03936361", registryUrl: "https://clinicaltrials.gov/study/NCT03936361", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT03936361", registryUrl: "https://clinicaltrials.gov/study/NCT03936361", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Statin continuation vs discontinuation after spontaneous lobar ICH (within 7 days) in patients taking a statin at onset.",
                 pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "Lobar ICH",
+                    "Spontaneous lobar ICH confirmed by CT or MRI",
                     "can be randomized within 7 days of stroke onset",
-                    "age ≥50"
+                    "age ≥50",
+                    "taking a statin drug at onset",
+                    "patient or LAR agrees to randomization after consultation with the statin prescriber"
                 ],
                 exactExclusionCriteria: [
                     "Suspected secondary cause for the ICH",
@@ -1893,51 +1891,72 @@
                 acronym: "CAPPRICORN-1",
                 exactFullStudyName: "A Study to Investigate the Efficacy, Safety, and Tolerability of ALN-APP in Patients with CAA",
                 sourceHypothesisText: "A randomized, double-blind, placebo-controlled, phase 2 trial to assess the safety and efficacy of intrathecally injected ALN-APP for treatment of patients with Cerebral Amyloid Angiopathy.",
-                status: "closed",
-                sourceCompletenessStatus: "partial",
-                sourceGaps: [
-                    "Exclusion criteria block is missing from source document",
-                    "Contact coordinator field is missing from source document"
-                ],
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "This demo cannot distinguish sporadic CAA age >=50 from Dutch-type CAA age >=30 with E693Q APP mutation, and it does not encode ALT/AST, recent investigational agent, or amyloid-antibody exclusions."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "Chronic",
-                externalMetadata: { nct: "NCT05684484", registryUrl: "https://clinicaltrials.gov/study/NCT05684484", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Intrathecally injected ALN-APP in CAA survivors. **Currently Closed to Enrollment**.",
-                pathway: "Study Closed to Enrollment",
+                externalMetadata: { nct: "NCT06393712", registryUrl: "https://clinicaltrials.gov/study/NCT06393712", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Intrathecal ALN-APP in sporadic probable CAA or Dutch-type CAA; prior clinical ICH is not required by the public CT.gov inclusion criteria.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "Patients with probable CAA determined by Boston Criteria of MRI and a history of ICH"
+                    "Sporadic CAA: age ≥ 50 years and probable CAA per Boston Criteria Version 2.0",
+                    "Dutch-type CAA: age ≥ 30 years and known E693Q amyloid precursor protein (APP) mutation"
                 ],
-                exactExclusionCriteria: [],
+                exactExclusionCriteria: [
+                    "Moderate or severe Alzheimer's disease or significant cognitive impairment",
+                    "Previous clinical ICH with onset < 90 days before anticipated randomization",
+                    "ALT or AST > 3x upper limit of normal",
+                    "eGFR < 30 ml/min/1.73m²"
+                ],
                 check: (p) => {
-                    return ["Study is closed to enrollment"];
+                    const errors = [];
+                    if (p.age < 30) errors.push("Age < 30 (requires ≥ 50 for sporadic CAA or ≥ 30 for Dutch-type CAA)");
+                    if (p.classification === 'ich' && p.onsetDays < 90) errors.push("Prior clinical ICH onset < 90 days before anticipated randomization");
+                    if (p.exSevereAphasiaCognitive) errors.push("Excludes moderate-to-severe cognitive impairment / Alzheimer's");
+                    if (p.exEgfr30) errors.push("eGFR < 30");
+                    return errors;
                 },
-                matchedCriteriaText: (p) => [],
-                pendingCriteriaText: (p) => []
+                matchedCriteriaText: (p) => {
+                    return [
+                        p.age >= 30 ? 'Age is ' + p.age + ' (meets criteria)' : "",
+                        (p.classification !== 'ich' || p.onsetDays >= 90) ? "No clinical ICH within 90 days identified in entered fields" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm sporadic probable CAA by Boston Criteria Version 2.0 or Dutch-type CAA with known E693Q APP mutation",
+                        "Confirm no prior clinical ICH with onset < 90 days before randomization",
+                        !p.exSevereAphasiaCognitive ? "Confirm no moderate/severe cognitive impairment or Alzheimer's" : "",
+                        !p.exEgfr30 ? "Confirm eGFR is ≥ 30 ml/min/1.73m²" : ""
+                    ].filter(Boolean);
+                }
             },
             {
                 acronym: "SCOUTS-3",
                 exactFullStudyName: "Stroke and CPAP Outcome Study 3",
                 sourceHypothesisText: "Among stroke survivors with OSA undergoing inpatient rehabilitation, an intensive multimodal CPAP support intervention will improve CPAP adherence during rehabilitation and through 3 months post-randomization compared with standard support, potentially enhancing stroke recovery and reducing recurrent events.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires CT/MRI proof of acute ischemic infarction or intraparenchymal hemorrhage within 30 days and includes oxygen, aspiration-risk, sedative, surgery, and anticipated rehab length-of-stay exclusions not fully encoded here."],
                 timeCategory: "acute_subacute",
                 enrollmentWindowText: "≤ 30 days",
-                externalMetadata: { nct: "NCT06154823", registryUrl: "https://clinicaltrials.gov/study/NCT06154823", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT06722755", registryUrl: "https://clinicaltrials.gov/study/NCT06722755", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "Among stroke survivors with OSA undergoing inpatient rehabilitation, intensive CPAP support compared with standard support.",
                 pathway: "EPIC Chat Stroke Rehab Team / Stroke Research Coordinator",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Age >= 18",
                     "Acute ischemic stroke or ICH within past 30 days",
-                    "On or moving to designated inpatient rehabilitation unit",
+                    "Head CT or brain MRI demonstrating acute ischemic infarction or intraparenchymal hemorrhage within 30 days",
+                    "On or moving to inpatient rehabilitation with anticipated length of stay at least 5 nights",
                     "Spanish or English speaking"
                 ],
                 exactExclusionCriteria: [
                     "incarcerated",
                     "pregnant",
-                    "trach present",
+                    "mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min",
                     "CPAP use within 14 days pre-CVA",
                     "CVA related to tumor, vascular malformation, or SAH"
                 ],
@@ -1949,14 +1968,14 @@
                     if (p.age < 18) errors.push("Age < 18");
                     if (p.onsetDays > 30) errors.push("Stroke occurred > 30 days ago");
                     if (p.rehab !== 'yes') {
-                        errors.push("Must be on or moving to designated inpatient rehab unit");
+                        errors.push("Must have inpatient rehabilitation placement and expected length of stay ≥ 5 nights");
                     }
                     if (p.language !== 'english' && p.language !== 'spanish') {
                         errors.push("Must be English or Spanish speaking");
                     }
                     if (p.exIncarcerated) errors.push("Excludes incarcerated patients");
                     if (p.exPregnancy) errors.push("Excludes pregnant patients");
-                    if (p.exTrach) errors.push("Excludes patients with tracheostomy");
+                    if (p.exTrach) errors.push("Excludes mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min");
                     if (p.exCpapUse14d) errors.push("Excludes prior CPAP use within 14 days pre-CVA");
                     if (p.exSecondaryIchOrSah) errors.push("Excludes stroke related to tumor, vascular malformation, or SAH");
                     return errors;
@@ -1966,17 +1985,17 @@
                         "Ischemic Stroke or ICH classification selected",
                         p.age >= 18 ? 'Age is ' + p.age + ' (meets ≥ 18)' : "",
                         p.onsetDays <= 30 ? "Onset within 30 days window" : "",
-                        (p.rehab === 'yes') ? "Planned rehab discharge confirmed" : "",
+                        (p.rehab === 'yes') ? "Inpatient rehabilitation placement confirmed" : "",
                         (p.language === 'english' || p.language === 'spanish') ? "Language is English or Spanish" : ""
                     ].filter(Boolean);
                 },
                 pendingCriteriaText: (p) => {
                     return [
                         "Confirm patient speaks English or Spanish",
-                        "Confirm planned discharge is to designated inpatient rehab unit",
+                        "Confirm inpatient rehabilitation placement and anticipated length of stay at least 5 nights",
                         !p.exIncarcerated ? "Confirm no prisoner/incarcerated status" : "",
                         !p.exPregnancy ? "Confirm not pregnant" : "",
-                        !p.exTrach ? "Confirm no tracheostomy" : "",
+                        !p.exTrach ? "Confirm no mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min" : "",
                         !p.exCpapUse14d ? "Confirm no prior CPAP use within 14 days pre-stroke" : "",
                         !p.exSecondaryIchOrSah ? "Confirm stroke was not caused by tumor, vascular malformation, or SAH" : ""
                     ].filter(Boolean);
@@ -1987,17 +2006,17 @@
                 exactFullStudyName: "Validation of Early Prognostic Data for Recovery Outcome after Stroke for Future, Higher Yield Trials",
                 sourceHypothesisText: "Patients have different UE outcomes depending on corticomotor system (CMS) function, measured as motor evoked potential (MEP) status with TMS, and on CMS structure, measured as acute lesion load with MRI. VERIFY will create the first multicenter, large-scale, prospective dataset of clinical, TMS, and MRI measures in the acute stroke time window.",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires SAFE score <=8 within 48-96 hours, Day 90 in-person availability, and MRI/TMS contraindication screening not fully encoded here."],
                 timeCategory: "acute_subacute",
                 enrollmentWindowText: "24 – 96 hours",
-                externalMetadata: { nct: "NCT05338697", registryUrl: "https://clinicaltrials.gov/study/NCT05338697", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT05338697", registryUrl: "https://clinicaltrials.gov/study/NCT05338697", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "TMS and MRI predictors of upper extremity recovery. Requires consent within 24-96h of LNW.",
                 pathway: "Consult Rehab Research Coordinator / Inpatient Rehab Team",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Unilaterally symptomatic acute ischemic stroke",
-                    "motor deficits in the affected upper extremity",
+                    "Motor deficits in the affected upper extremity with SAFE score ≤ 8 within 48-96 hours",
                     "able to consent for themselves",
                     "able to consent within 24-96 hours of LNW",
                     "English or Spanish speaking"
@@ -2007,7 +2026,8 @@
                     "legally blind",
                     "dense sensory loss of NIHSS=2",
                     "symptomatic stroke within 30 days prior to enrolling event",
-                    "seizure since stroke onset"
+                    "seizure since stroke onset",
+                    "MRI or TMS contraindication"
                 ],
                 check: (p) => {
                     const errors = [];
@@ -2054,19 +2074,20 @@
                 exactFullStudyName: "Motor Recovery through Plasticity-Inducing Cortical Stimulation",
                 sourceHypothesisText: "To assess the safe use of the CorTec Brain Interchange for use in providing cortical stimulation for stroke rehabilitation studies and establishing the technical feasibility of delivering plasticity-inducing stimulation within stroke patients. We hope to use this preliminary safety and feasibility data to inform a potential future study to collect preliminary efficacy data regarding the use of stimulation-induced neuroplasticity to improve stroke rehabilitation motor functional outcomes",
                 status: "enrolling",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires UEFM 25-45, at least 30% corticospinal pathway preservation on MRI, observable motor output to TMS, and additional surgical/device safety screening not fully encoded here."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "> 6 months",
-                externalMetadata: { nct: "NCT06014499", registryUrl: "https://clinicaltrials.gov/study/NCT06014499", verificationDate: "2026-05-19" },
-                conciseBedsideSummary: "Invasive cortical stimulation in chronic stroke patients (stroke > 6 months prior, pre-mRS 3-4, available for 54 weeks).",
+                externalMetadata: { nct: "NCT06506279", registryUrl: "https://clinicaltrials.gov/study/NCT06506279", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Invasive cortical stimulation in chronic stroke patients (stroke > 6 months prior, post-stroke mRS 3-4, available for 54 weeks).",
                 pathway: "Consult Rehab Research Coordinator",
                 noContactInfo: true,
                 exactInclusionCriteria: [
-                    "Ischemic stroke >6 months prior to enrollment",
+                    "History of ischemic cortical stroke at least 6 months prior",
                     "ages 22-75",
-                    "mRS 3-4",
-                    "moderate unilateral upper extremity weakness",
+                    "Post-stroke mRS 3-4",
+                    "UEFM score 25-45 with upper limb impairment",
+                    "Minimum 30% corticospinal pathway preservation on MRI and observable upper-limb motor output to TMS",
                     "available for duration of study period (54 weeks) for in person visits"
                 ],
                 exactExclusionCriteria: [
@@ -2081,7 +2102,7 @@
                     if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
                     if (p.onsetMonths < 6) errors.push("Requires chronic phase > 6 months post-stroke");
                     if (p.age < 22 || p.age > 75) errors.push("Requires age 22-75");
-                    if (p.preMrs !== 3 && p.preMrs !== 4) errors.push("Pre-stroke mRS must be 3 or 4");
+                    if (p.preMrs !== 3 && p.preMrs !== 4) errors.push("Current (post-stroke) mRS must be 3 or 4");
                     if (!p.exUeWeakness) errors.push("Requires moderate unilateral upper extremity weakness");
                     if (!p.availability_54w) errors.push("Requires availability for 54 weeks of visits");
                     if (!p.self_consent) errors.push("Patient must be able to self-consent");
@@ -2094,7 +2115,6 @@
                     if (p.exArmInjury) errors.push("Excludes arm fracture or orthopedic injury");
                     if (p.exSevereAphasiaCognitive) errors.push("Excludes severe aphasia or cognitive impairment");
                     if (p.exSevereClaustrophobia) errors.push("Excludes severe claustrophobia");
-                    if (p.exBotoxVns3m) errors.push("Excludes botox injection in target arm within 3 months");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
@@ -2102,7 +2122,7 @@
                         "Ischemic Stroke classification selected",
                         p.onsetMonths >= 6 ? "Stroke occurred > 6 months ago" : "",
                         (p.age >= 22 && p.age <= 75) ? 'Age is ' + p.age + ' (meets 22-75)' : "",
-                        (p.preMrs === 3 || p.preMrs === 4) ? 'Pre-stroke mRS is ' + p.preMrs : "",
+                        (p.preMrs === 3 || p.preMrs === 4) ? 'Current mRS is ' + p.preMrs : "",
                         p.exUeWeakness === true ? "Unilateral upper extremity weakness confirmed" : "",
                         p.availability_54w === true ? "Available for 54-week in-person visits" : "",
                         p.self_consent === true ? "Patient able to self-consent" : ""
@@ -2112,6 +2132,7 @@
                     return [
                         "Confirm patient is able to self-consent",
                         "Confirm availability for 54 weeks of in-person follow-up visits",
+                        "Confirm UEFM 25-45, corticospinal pathway preservation, and TMS motor output requirements",
                         !p.exAnticoagulation ? "Confirm not on anticoagulants (DOAC/warfarin/heparin)" : "",
                         !p.exHistoryDvtPe ? "Confirm no history of DVT or pulmonary emboli" : "",
                         !p.exSeizures ? "Confirm no history of seizures or epilepsy" : "",
@@ -2123,27 +2144,29 @@
                 acronym: "TELE-REHAB-2",
                 exactFullStudyName: "Telerehabilitation in the home after stroke",
                 sourceHypothesisText: "Adding a 6-week course of intensive Telerehabilitation to usual care after stroke results in superior functional outcomes compared to usual care alone.",
-                status: "soon",
-                sourceCompletenessStatus: "complete",
-                sourceGaps: [],
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires ARAT 18-44, Box & Block affected arm >=1 block/60 seconds, ability to perform 3 exercise examples, and self-signed consent/behavioral contract; not all are encoded here."],
                 timeCategory: "subacute_chronic",
                 enrollmentWindowText: "90 – 150 days",
-                externalMetadata: { nct: "NCT06385514", registryUrl: "https://clinicaltrials.gov/study/NCT06385514", verificationDate: "2026-05-19" },
+                externalMetadata: { nct: "NCT06682429", registryUrl: "https://clinicaltrials.gov/study/NCT06682429", verificationDate: "2026-05-28" },
                 conciseBedsideSummary: "6-week course of intensive home telerehabilitation in patients 90-150 days post-ischemic or hemorrhagic stroke.",
                 pathway: "Consult Rehab Coordinator",
                 noContactInfo: true,
                 exactInclusionCriteria: [
                     "Ischemic stroke or ICH between 90-150 days prior to randomization",
                     "age 18-80",
-                    "moderate upper extremity weakness",
-                    "able to consent for themselves"
+                    "Action Research Arm Test score 18-44 at baseline",
+                    "Box & Block Test affected arm score ≥1 block in 60 seconds",
+                    "Able to perform all 3 rehabilitation exercise test examples",
+                    "Informed consent and behavioral contract signed by the subject; no surrogate consent"
                 ],
                 exactExclusionCriteria: [
                     "mRS prior to stroke of >2",
                     "a new stroke has occurred since index stroke",
                     "a separate stroke occurred within 30 days prior to index stroke",
                     "life expectancy < 9months",
-                    "botox or vagus nerve stimulation received in prior 3 months or expected by the 8 month visit"
+                    "botulinum toxin to the paretic arm received in the prior 3 months or expected by the 8-month visit"
                 ],
                 check: (p) => {
                     const errors = [];
@@ -2158,7 +2181,7 @@
                     if (p.exRecurrentStroke) errors.push("Excludes recurrent stroke since index stroke");
                     if (p.exRecentStroke30d) errors.push("Excludes separate stroke within 30 days prior");
                     if (p.exLifeExpectancy9m) errors.push("Excludes life expectancy < 9 months");
-                    if (p.exBotoxVns3m) errors.push("Excludes Botox/VNS within 3 months, or expected by 8 months");
+                    if (p.exBotoxVns3m) errors.push("Excludes botulinum toxin to the paretic arm within 3 months, or expected by the 8-month visit");
                     return errors;
                 },
                 matchedCriteriaText: (p) => {
@@ -2177,7 +2200,7 @@
                         !p.exRecurrentStroke ? "Confirm no recurrent stroke since the index stroke" : "",
                         !p.exRecentStroke30d ? "Confirm no separate stroke within 30 days prior to the index stroke" : "",
                         !p.exLifeExpectancy9m ? "Confirm life expectancy is ≥ 9 months" : "",
-                        !p.exBotoxVns3m ? "Confirm no Botox or Vagus Nerve Stimulation in prior 3 months" : ""
+                        !p.exBotoxVns3m ? "Confirm no botulinum toxin to the paretic arm in prior 3 months or expected by the 8-month visit" : ""
                     ].filter(Boolean);
                 }
             }
@@ -2213,7 +2236,6 @@
             p_ich_location = 'unselected';
             p_volume = 'unselected';
             p_statin = 'unselected';
-            p_abcd2 = 'unselected';
             p_language = 'unselected';
             p_rehab = 'unselected';
             p_self_consent = 'unselected';
@@ -2395,6 +2417,8 @@
             }
             
             checkOnsetExclusions();
+            compileDynamicMetrics();
+            compileDynamicExclusions();
             calculateEligibility();
         }
 
@@ -2408,7 +2432,7 @@
                 if (hours < 4.5) {
                     warning = "AIS onset < 4.5 hours is outside SISTER enrollment window (requires 4.5h to 24h).";
                 } else if (hours > 24) {
-                    warning = "AIS onset > 24 hours is outside hyperacute windows (SISTER, STEP, TESTED).";
+                    warning = "AIS onset > 24 hours is outside hyperacute windows (SISTER, STEP).";
                 }
             } else if (p_classification === 'ich') {
                 if (hours > 16) {
@@ -2473,12 +2497,15 @@
 
             // 2. Pre-stroke mRS (Show for all selected stroke types)
             if (p_classification === 'ischemic' || p_classification === 'ich' || p_classification === 'tia') {
+                const isChronic = (p_classification === 'ischemic' && onsetMonths >= 6);
+                const mrsLabel = isChronic ? "Current mRS (Post-Stroke)" : "Pre-Stroke mRS";
+                const mrsSelectLabel = isChronic ? "Select Current mRS..." : "Select Pre-stroke mRS...";
                 html += `
                     <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
                         <div class="form-group" style="width:100%;">
-                            <label for="val_pre_mrs">Pre-Stroke mRS</label>
+                            <label for="val_pre_mrs">${mrsLabel}</label>
                             <select id="val_pre_mrs" onchange="p_preMrs=(this.value === 'unselected') ? 'unselected' : parseInt(this.value); calculateEligibility();">
-                                <option value="unselected" ${p_preMrs==='unselected'?'selected':''}>Select Pre-stroke mRS...</option>
+                                <option value="unselected" ${p_preMrs==='unselected'?'selected':''}>${mrsSelectLabel}</option>
                                 <option value="0" ${p_preMrs===0?'selected':''}>0 - No symptoms</option>
                                 <option value="1" ${p_preMrs===1?'selected':''}>1 - No significant disability</option>
                                 <option value="2" ${p_preMrs===2?'selected':''}>2 - Slight disability (independent)</option>
@@ -2545,19 +2572,7 @@
                 `;
             }
 
-            // 6. ABCD2 Risk Score (TIA, onset <= 180 days)
-            if (p_classification === 'tia' && onsetDays <= 180) {
-                html += `
-                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
-                        <div class="form-group" style="width:100%;">
-                            <label for="val_abcd2_input">ABCD2 Risk Score</label>
-                            <input type="number" id="val_abcd2_input" min="0" max="7" placeholder="e.g. 5" value="${p_abcd2 === 'unselected' ? '' : p_abcd2}" oninput="p_abcd2 = (this.value === '') ? 'unselected' : parseInt(this.value); calculateEligibility();">
-                        </div>
-                    </div>
-                `;
-            }
-
-            // 7. ICH location, Hematoma volume, statin, afib (ICH workflows)
+            // 6. ICH location, Hematoma volume, statin, afib (ICH workflows)
             if (p_classification === 'ich') {
                 html += `
                     <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
@@ -2636,10 +2651,10 @@
                             <label for="val_etiology">Subtype / Etiology</label>
                             <select id="val_etiology" onchange="p_etiology=this.value; calculateEligibility();">
                                 <option value="unselected" ${p_etiology==='unselected'?'selected':''}>Select Etiology...</option>
-                                <option value="laa" ${p_etiology==='laa'?'selected':''}>Large Artery Atherosclerosis (LAA) [Non-Cardioembolic]</option>
-                                <option value="lacunar" ${p_etiology==='lacunar'?'selected':''}>Lacunar / Small Vessel [Non-Cardioembolic]</option>
-                                <option value="esus" ${p_etiology==='esus'?'selected':''}>ESUS / Cryptogenic [Non-Cardioembolic]</option>
-                                <option value="other_non_cardioembolic" ${p_etiology==='other_non_cardioembolic'?'selected':''}>Other Non-Cardioembolic</option>
+                                <option value="laa" ${p_etiology==='laa'?'selected':''}>Large Artery Atherosclerosis (LAA)</option>
+                                <option value="lacunar" ${p_etiology==='lacunar'?'selected':''}>Lacunar / Small Vessel</option>
+                                <option value="esus" ${p_etiology==='esus'?'selected':''}>ESUS / Cryptogenic</option>
+                                <option value="other_noncardiac" ${p_etiology==='other_noncardiac'?'selected':''}>Other noncardiac-source subtype</option>
                                 <option value="cardioembolic" ${p_etiology==='cardioembolic'?'selected':''}>Cardioembolic</option>
                             </select>
                         </div>
@@ -2771,7 +2786,6 @@
                     { id: 'exMultipleTerritories', label: 'Acute occlusions in multiple vascular territories', def: false, classifications: ['ischemic'], trials: ['STEP'] },
                     { id: 'exTandem', label: 'Tandem occlusions (cervical + intracranial)', def: false, classifications: ['ischemic'], trials: ['STEP'] },
                     { id: 'exTerminalIllness', label: 'Terminal illness or life expectancy < 2y', def: false, classifications: ['ischemic', 'ich'], trials: ['TESTED', 'SATURN'] },
-                    { id: 'exInpatientOnset', label: 'Stroke onset during acute inpatient stay', def: false, classifications: ['ischemic'], trials: ['TESTED'] },
                     { id: 'exSecondaryIch', label: 'Suspected secondary cause for ICH (AVM, aneurysm, tumor, SAH)', def: false, classifications: ['ich'], trials: ['MINUTE', 'ASPIRE', 'SATURN'] },
                     { id: 'exMidbrain', label: 'Midbrain extension or infratentorial/thalamic location', def: false, classifications: ['ich'], trials: ['MINUTE'] },
                     { id: 'exPriorIch12m', label: 'Prior ICH in past 12 months', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
@@ -2783,12 +2797,13 @@
                     { id: 'exMriContraindication', label: 'Contraindication to MRI or gadolinium contrast', def: false, classifications: ['ischemic'], trials: ['ESUS', 'MOCHA'] },
                     { id: 'exRecentSurgery30d', label: 'Surgery within 30 days prior to stroke onset', def: false, classifications: ['ischemic'], trials: ['ESUS'] },
                     { id: 'exBilateralCarotidRevasc', label: 'History of bilateral carotid endarterectomy/stenting', def: false, classifications: ['ischemic'], trials: ['MOCHA'] },
-                    { id: 'exPriorIchHistory', label: 'Prior history of spontaneous ICH', def: false, classifications: ['ischemic', 'tia'], trials: ['INTERCEPT', 'MR-PICS'] },
-                    { id: 'exSaptContraindication', label: 'Contraindication to additional SAPT for 6 months', def: false, classifications: ['tia'], trials: ['INTERCEPT'] },
-                    { id: 'exCarotidStenosis50', label: 'Carotid/vertebral/subclavian/intracranial stenosis ≥ 50%', def: false, classifications: ['tia'], trials: ['INTERCEPT'] },
-                    { id: 'exPregnancy', label: 'Pregnancy', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exPriorIchHistory', label: 'Prior history of spontaneous ICH / brain hemorrhage', def: false, classifications: ['ischemic', 'tia'], trials: ['INTERCEPT', 'MR-PICS'] },
+                    { id: 'exBrainBleed2y', label: 'Spontaneous brain bleed within past 2 years', def: false, classifications: ['ischemic', 'tia'], trials: ['CLARITY'] },
+                    { id: 'exSaptContraindication', label: 'Contraindication to additional SAPT for 6 months', def: false, classifications: ['ischemic'], trials: ['INTERCEPT'] },
+                    { id: 'exCarotidStenosis50', label: 'Carotid/vertebral/subclavian/intracranial stenosis ≥ 50%', def: false, classifications: ['ischemic'], trials: ['INTERCEPT'] },
+                    { id: 'exPregnancy', label: 'Pregnancy', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3', 'MR-PICS', 'TELE-REHAB-2'] },
                     { id: 'exIncarcerated', label: 'Patient is incarcerated (prisoner)', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
-                    { id: 'exTrach', label: 'Tracheostomy present', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exTrach', label: 'Mechanical ventilation, tracheostomy, or oxygen > 4 L/min', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
                     { id: 'exCpapUse14d', label: 'CPAP use within 14 days pre-CVA', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
                     { id: 'exSecondaryIchOrSah', label: 'Stroke related to tumor, malformation, or SAH', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
                     { id: 'exPriorUeCondition', label: 'Prior upper extremity condition limiting use', def: false, classifications: ['ischemic'], trials: ['VERIFY'] },
@@ -2796,11 +2811,17 @@
                     { id: 'exDenseSensoryLoss', label: 'Dense sensory loss (NIHSS sensory score = 2)', def: false, classifications: ['ischemic'], trials: ['VERIFY'] },
                     { id: 'exRecentStroke30d', label: 'Separate symptomatic stroke within prior 30 days', def: false, classifications: ['ischemic', 'ich'], trials: ['VERIFY', 'TELE-REHAB-2'] },
                     { id: 'exSeizures', label: 'Seizures since stroke onset / history of epilepsy', def: false, classifications: ['ischemic', 'ich'], trials: ['VERIFY', 'MR-PICS'] },
-                    { id: 'exBotoxVns3m', label: 'Botox or VNS within past 3 months', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
+                    { id: 'exBotoxVns3m', label: 'Botulinum toxin to paretic arm within past 3 months or expected by 8-month visit', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
                     { id: 'exAnticoagulation', label: 'Currently taking anticoagulants', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
                     { id: 'exHistoryDvtPe', label: 'History of DVT or pulmonary emboli (PE)', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
                     { id: 'exRecurrentStroke', label: 'Recurrent stroke since the index stroke', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
-                    { id: 'exLifeExpectancy9m', label: 'Life expectancy < 9 months', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] }
+                    { id: 'exLifeExpectancy9m', label: 'Life expectancy < 9 months', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
+                    { id: 'exCongestiveHeartFailure', label: 'Congestive Heart Failure (moderate/severe)', def: false, classifications: ['ischemic', 'tia'], trials: ['CLARITY'] },
+                    { id: 'exSevereAphasiaCognitive', label: 'Moderate-to-severe cognitive impairment, dementia, or severe aphasia', def: false, classifications: ['ischemic', 'ich'], trials: ['MR-PICS', 'CAPPRICORN-1'] },
+                    { id: 'exSevereSpasticity', label: 'Severe spasticity in target arm', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exArmInjury', label: 'Arm fracture or orthopedic injury', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exSevereClaustrophobia', label: 'Severe claustrophobia', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exEgfr30', label: 'eGFR < 30 ml/min/1.73m²', def: false, classifications: ['ich'], trials: ['CAPPRICORN-1'] }
                 ]
             };
 
@@ -2910,7 +2931,6 @@
             if (pessP.aspects === 'unselected') pessP.aspects = -1;
             if (pessP.gcs === 'unselected') pessP.gcs = -1;
             if (pessP.preMrs === 'unselected') pessP.preMrs = 6;
-            if (pessP.abcd2 === 'unselected') pessP.abcd2 = -1;
             if (pessP.vessel === 'unselected') pessP.vessel = 'none';
             if (pessP.etiology === 'unselected') pessP.etiology = 'none';
             if (pessP.ichLocation === 'unselected') pessP.ichLocation = 'none';
@@ -2945,15 +2965,13 @@
                 if (trial.acronym === 'TESTED' || trial.acronym === 'MR-PICS') optP.preMrs = 3;
                 else optP.preMrs = 0;
             }
-            if (optP.abcd2 === 'unselected') optP.abcd2 = 6;
             if (optP.vessel === 'unselected') {
                 if (trial.acronym === 'STEP') optP.vessel = 'ica_m1';
                 else if (trial.acronym === 'TESTED') optP.vessel = 'ica_m1';
                 else optP.vessel = 'none';
             }
             if (optP.etiology === 'unselected') {
-                if (trial.acronym === 'CLARITY') optP.etiology = 'other_non_cardioembolic';
-                else if (trial.acronym === 'ESUS' || trial.acronym === 'MOCHA') optP.etiology = 'esus';
+                if (trial.acronym === 'ESUS' || trial.acronym === 'MOCHA') optP.etiology = 'esus';
                 else optP.etiology = 'other';
             }
             if (optP.ichLocation === 'unselected') {
@@ -3002,6 +3020,7 @@
                             (trial.acronym === 'ASPIRE' && p.onsetDays < 14) || 
                             (trial.acronym === 'VERIFY' && p.onsetHours < 24) || 
                             (trial.acronym === 'TELE-REHAB-2' && p.onsetDays < 90));
+            const requiresSourceConfirmation = !!trial.sourceCompletenessStatus && trial.sourceCompletenessStatus !== 'complete';
 
             const pendingFields = [];
             const fieldsToTest = [
@@ -3009,7 +3028,7 @@
                 { key: 'nihss', failVal: 0, label: 'NIHSS Score' },
                 { key: 'aspects', failVal: 3, label: 'ASPECTS Score' },
                 { key: 'gcs', failVal: 3, label: 'GCS Score' },
-                { key: 'preMrs', failVal: 5, label: 'Pre-stroke mRS' },
+                { key: 'preMrs', failVal: 5, label: 'mRS / functional status' },
                 { key: 'vessel', failVal: 'none', label: 'Vessel status' },
                 { key: 'etiology', failVal: 'cardioembolic', label: 'Stroke Subtype' },
                 { key: 'ichLocation', failVal: 'bg', label: 'Hemorrhage Location' },
@@ -3017,7 +3036,6 @@
                 { key: 'statin', failVal: false, label: 'Statin at onset' },
                 { key: 'afibHistory', failVal: false, label: 'Atrial Fibrillation history' },
                 { key: 'takingOac', failVal: false, label: 'Anticoagulation status' },
-                { key: 'abcd2', failVal: 0, label: 'ABCD2 Score' },
                 { key: 'language', failVal: 'other', label: 'Language spoken' },
                 { key: 'rehab', failVal: 'none', label: 'Rehab unit placement' },
                 { key: 'self_consent', failVal: false, label: 'Patient able to self-consent' },
@@ -3040,11 +3058,19 @@
                 }
             });
 
+            if (requiresSourceConfirmation) {
+                pendingFields.push("Full registry/protocol confirmation");
+            }
+
             if (pessErrors.length > 0 || pendingFields.length > 0) {
+                const pendingCriteria = trial.pendingCriteriaText(p).slice();
+                if (requiresSourceConfirmation) {
+                    pendingCriteria.push("Confirm the full ClinicalTrials.gov record, approved local protocol, activation status, consent path, and study-owner instructions before any clinical or recruitment action");
+                }
                 return {
-                    status: 'pending',
+                    status: isSoon ? 'soon' : 'pending',
                     matchedCriteria: trial.matchedCriteriaText(p),
-                    pendingCriteria: trial.pendingCriteriaText(p),
+                    pendingCriteria: pendingCriteria,
                     pendingFields: pendingFields,
                     exclusionReasons: [],
                     sourceGaps: trial.sourceGaps || []
@@ -3098,7 +3124,6 @@
                 ichLocation: p_ich_location,
                 volume: p_volume,
                 statin: p_statin,
-                abcd2: p_abcd2,
                 language: p_language === true ? 'english' : (p_language === false ? 'other' : 'unselected'),
                 rehab: p_rehab === true ? 'yes' : (p_rehab === false ? 'none' : 'unselected'),
                 self_consent: p_self_consent,
@@ -3118,7 +3143,6 @@
                 exMultipleTerritories: !!exclusionsState['exMultipleTerritories'],
                 exTandem: !!exclusionsState['exTandem'],
                 exTerminalIllness: !!exclusionsState['exTerminalIllness'],
-                exInpatientOnset: !!exclusionsState['exInpatientOnset'],
                 exSecondaryIch: !!exclusionsState['exSecondaryIch'],
                 exMidbrain: !!exclusionsState['exMidbrain'] || (p_ich_location === 'thalamic' || p_ich_location === 'infratentorial'),
                 exMassiveIvh: !!exclusionsState['exMassiveIvh'],
@@ -3136,10 +3160,10 @@
                 exRecentSurgery30d: !!exclusionsState['exRecentSurgery30d'],
                 exBilateralCarotidRevasc: !!exclusionsState['exBilateralCarotidRevasc'],
                 exPriorIchHistory: !!exclusionsState['exPriorIchHistory'],
+                exBrainBleed2y: !!exclusionsState['exBrainBleed2y'],
                 exSaptContraindication: !!exclusionsState['exSaptContraindication'],
                 exCarotidStenosis50: !!exclusionsState['exCarotidStenosis50'],
                 exPregnancy: !!exclusionsState['exPregnancy'],
-                exImplantableDevices: !!exclusionsState['exImplantableDevices'],
                 exIncarcerated: !!exclusionsState['exIncarcerated'],
                 exTrach: !!exclusionsState['exTrach'],
                 exCpapUse14d: !!exclusionsState['exCpapUse14d'],
@@ -3164,7 +3188,9 @@
                 exDrugAlcoholAbuse: !!exclusionsState['exDrugAlcoholAbuse'],
                 exMsParkinsonAlsDementia: !!exclusionsState['exMsParkinsonAlsDementia'],
                 exMajorPsychiatric: !!exclusionsState['exMajorPsychiatric'],
-                exOtherUpperLimbTrial: !!exclusionsState['exOtherUpperLimbTrial']
+                exOtherUpperLimbTrial: !!exclusionsState['exOtherUpperLimbTrial'],
+                exCongestiveHeartFailure: !!exclusionsState['exCongestiveHeartFailure'],
+                exEgfr30: !!exclusionsState['exEgfr30']
             };
 
             const eligibleList = [];
@@ -3185,7 +3211,7 @@
                 } else if (results.status === 'pending') {
                     pendingList.push({ trial, errors: [], pendingFields: results.pendingFields });
                 } else if (results.status === 'soon') {
-                    soonList.push({ trial, errors: [], pendingFields: [] });
+                    soonList.push({ trial, errors: [], pendingFields: results.pendingFields || [] });
                 } else if (results.status === 'eligible') {
                     eligibleList.push({ trial, errors: [], pendingFields: [] });
                 }
@@ -3265,7 +3291,7 @@
                             </div>
                         `;
                     } else {
-                        if (category === 'pending' && item.pendingFields && item.pendingFields.length > 0) {
+                        if (item.pendingFields && item.pendingFields.length > 0) {
                             notesHtml += `
                                 <div class="output-notes-box pending-reasons" style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); padding: 0.5rem 0.75rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-main);">
                                     <strong>Pending Bedside Inputs:</strong> ` + item.pendingFields.join(', ') + `
@@ -3442,7 +3468,7 @@
 
             const gapHtml = (trial.sourceGaps && trial.sourceGaps.length > 0) ? `
                 <div class="source-gap-alert" style="margin-top:0.75rem; background:rgba(239, 68, 68, 0.1); border-left:3px solid var(--danger); padding:0.5rem 0.75rem; border-radius:4px; font-size:0.75rem; color:var(--text-main);">
-                    <strong>Source Summary Document Gaps:</strong>
+                    <strong>Registry / Protocol Verification Notes:</strong>
                     <ul style="padding-left:1rem; margin-top:0.15rem; margin-bottom:0;">
                         ` + trial.sourceGaps.map(function(g) { return '<li>' + g + '</li>'; }).join('') + `
                     </ul>
@@ -3546,7 +3572,7 @@
 
                 const gapHtml = (trial.sourceGaps && trial.sourceGaps.length > 0) ? `
                     <div class="source-gap-alert">
-                        <strong>Source Summary Document Gaps:</strong>
+                        <strong>Registry / Protocol Verification Notes:</strong>
                         <ul style="padding-left:1rem; margin-top:0.15rem;">
                             ` + trial.sourceGaps.map(function(g) { return '<li>' + g + '</li>'; }).join('') + `
                         </ul>
@@ -3677,7 +3703,6 @@
             p_ich_location = 'unselected';
             p_volume = 'unselected';
             p_statin = 'unselected';
-            p_abcd2 = 'unselected';
             p_afibHistory = 'unselected';
             p_takingOac = 'unselected';
             p_language = 'unselected';
