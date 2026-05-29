@@ -1826,66 +1826,6 @@
                 }
             },
             {
-                acronym: "SATURN",
-                exactFullStudyName: "Statins Use in Intracerebral Hemorrhage Patients",
-                sourceHypothesisText: "To determine the effects of continuation vs. discontinuation of statins on the risk of ICH recurrence during 24 months of follow-up in patients presenting with a spontaneous lobar lCH while taking a statin drug.",
-                status: "enrolling",
-                sourceCompletenessStatus: "first_pass",
-                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov includes statin-prescriber consultation/randomization agreement, PCSK9/familial hypercholesterolemia, severe dementia, statin safety, and withdrawal-of-care exclusions not fully encoded here."],
-                timeCategory: "acute_subacute",
-                enrollmentWindowText: "≤ 7 days",
-                externalMetadata: { nct: "NCT03936361", registryUrl: "https://clinicaltrials.gov/study/NCT03936361", verificationDate: "2026-05-28" },
-                conciseBedsideSummary: "Statin continuation vs discontinuation after spontaneous lobar ICH (within 7 days) in patients taking a statin at onset.",
-                pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
-                noContactInfo: true,
-                exactInclusionCriteria: [
-                    "Spontaneous lobar ICH confirmed by CT or MRI",
-                    "can be randomized within 7 days of stroke onset",
-                    "age ≥50",
-                    "taking a statin drug at onset",
-                    "patient or LAR agrees to randomization after consultation with the statin prescriber"
-                ],
-                exactExclusionCriteria: [
-                    "Suspected secondary cause for the ICH",
-                    "ICH score > 3",
-                    "MI within past 3 months",
-                    "pre stroke mRS >3",
-                    "life expectancy < 2 years"
-                ],
-                check: (p) => {
-                    const errors = [];
-                    if (p.classification !== 'ich') errors.push("Requires ICH");
-                    if (p.ichLocation !== 'lobar') errors.push("Requires Lobar ICH");
-                    if (p.onsetDays > 7) errors.push("LKW-to-randomization > 7 days");
-                    if (p.age < 50) errors.push("Age < 50");
-                    if (!p.statin) errors.push("Requires patient to be taking a statin at onset");
-                    if (p.preMrs > 3) errors.push("Pre-stroke mRS > 3");
-                    if (p.exSecondaryIch) errors.push("Excludes suspected secondary cause");
-                    if (p.exIchScore3) errors.push("Excludes ICH score > 3");
-                    if (p.exRecentMi3m) errors.push("Excludes MI within past 3 months");
-                    if (p.exLifeExpectancy2y) errors.push("Excludes life expectancy < 2 years");
-                    return errors;
-                },
-                matchedCriteriaText: (p) => {
-                    return [
-                        "ICH classification selected",
-                        p.ichLocation === 'lobar' ? "Lobar ICH location confirmed" : "",
-                        p.onsetDays <= 7 ? "Onset within 7 days window" : "",
-                        p.age >= 50 ? 'Age is ' + p.age + ' (meets ≥ 50)' : "",
-                        p.statin === true ? "Taking statin drug at onset" : "",
-                        p.preMrs <= 3 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 3)' : ""
-                    ].filter(Boolean);
-                },
-                pendingCriteriaText: (p) => {
-                    return [
-                        !p.exSecondaryIch ? "Confirm no secondary cause (AVM, aneurysm, tumor, SAH)" : "",
-                        !p.exIchScore3 ? "Confirm clinical ICH score is ≤ 3" : "",
-                        !p.exRecentMi3m ? "Confirm no Myocardial Infarction in the past 3 months" : "",
-                        !p.exLifeExpectancy2y ? "Confirm life expectancy is ≥ 2 years" : ""
-                    ].filter(Boolean);
-                }
-            },
-            {
                 acronym: "CAPPRICORN-1",
                 exactFullStudyName: "A Study to Investigate the Efficacy, Safety, and Tolerability of ALN-APP in Patients with CAA",
                 sourceHypothesisText: "A randomized, double-blind, placebo-controlled, phase 2 trial to assess the safety and efficacy of intrathecally injected ALN-APP for treatment of patients with Cerebral Amyloid Angiopathy.",
@@ -2783,14 +2723,12 @@
                     { id: 'exStroke90d', label: 'Known stroke in prior 90 days', def: false, classifications: ['ischemic'], trials: ['SISTER'] },
                     { id: 'exMultipleTerritories', label: 'Acute occlusions in multiple vascular territories', def: false, classifications: ['ischemic'], trials: ['STEP'] },
                     { id: 'exTandem', label: 'Tandem occlusions (cervical + intracranial)', def: false, classifications: ['ischemic'], trials: ['STEP'] },
-                    { id: 'exTerminalIllness', label: 'Terminal illness or life expectancy < 2y', def: false, classifications: ['ischemic', 'ich'], trials: ['TESTED', 'SATURN'] },
-                    { id: 'exSecondaryIch', label: 'Suspected secondary cause for ICH (AVM, aneurysm, tumor, SAH)', def: false, classifications: ['ich'], trials: ['MINUTE', 'ASPIRE', 'SATURN'] },
+                    { id: 'exTerminalIllness', label: 'Terminal illness or life expectancy < 2y', def: false, classifications: ['ischemic', 'ich'], trials: ['TESTED'] },
+                    { id: 'exSecondaryIch', label: 'Suspected secondary cause for ICH (AVM, aneurysm, tumor, SAH)', def: false, classifications: ['ich'], trials: ['MINUTE', 'ASPIRE'] },
                     { id: 'exMidbrain', label: 'Midbrain extension or infratentorial/thalamic location', def: false, classifications: ['ich'], trials: ['MINUTE'] },
                     { id: 'exPriorIch12m', label: 'Prior ICH in past 12 months', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
                     { id: 'exClearAnticoagulationIndication', label: 'Clear baseline indication for anticoagulation', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
                     { id: 'exClearAntiplateletIndication', label: 'Clear baseline indication for antiplatelet therapy', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
-                    { id: 'exIchScore3', label: 'Clinical ICH Score > 3', def: false, classifications: ['ich'], trials: ['SATURN'] },
-                    { id: 'exRecentMi3m', label: 'Myocardial Infarction within past 3 months', def: false, classifications: ['ich'], trials: ['SATURN'] },
                     { id: 'exEgfr35', label: 'eGFR < 35 ml/min/1.73m²', def: false, classifications: ['ischemic'], trials: ['ESUS', 'MOCHA'] },
                     { id: 'exMriContraindication', label: 'Contraindication to MRI or gadolinium contrast', def: false, classifications: ['ischemic'], trials: ['ESUS', 'MOCHA'] },
                     { id: 'exRecentSurgery30d', label: 'Surgery within 30 days prior to stroke onset', def: false, classifications: ['ischemic'], trials: ['ESUS'] },
@@ -2973,16 +2911,14 @@
                 else optP.etiology = 'other';
             }
             if (optP.ichLocation === 'unselected') {
-                if (trial.acronym === 'SATURN') optP.ichLocation = 'lobar';
-                else optP.ichLocation = 'bg';
+                optP.ichLocation = 'bg';
             }
             if (optP.volume === 'unselected') {
                 if (trial.acronym === 'MINUTE') optP.volume = 'bg_large';
                 else optP.volume = 'small';
             }
             if (optP.statin === 'unselected') {
-                if (trial.acronym === 'SATURN') optP.statin = true;
-                else optP.statin = false;
+                optP.statin = false;
             }
             if (optP.afibHistory === 'unselected') {
                 if (trial.acronym === 'INTERCEPT' || trial.acronym === 'ASPIRE') optP.afibHistory = true;
