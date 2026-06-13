@@ -3410,7 +3410,7 @@
             ` : '';
 
             const registryLink = trial.externalMetadata.nct ? `
-                <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" style="color:var(--accent-secondary); text-decoration:none; font-weight:700; text-decoration: underline;">
+                <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary); text-decoration:none; font-weight:700; text-decoration: underline;">
                     ` + trial.externalMetadata.nct + ` ↗
                 </a>
             ` : 'N/A';
@@ -3514,7 +3514,7 @@
                 ` : '';
 
                 const registryLink = trial.externalMetadata.nct ? `
-                    <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" style="color:var(--accent-secondary); text-decoration:none; font-weight:700;">
+                    <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary); text-decoration:none; font-weight:700;">
                         ` + trial.externalMetadata.nct + ` ↗
                     </a>
                 ` : 'N/A';
