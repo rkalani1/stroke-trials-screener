@@ -3576,7 +3576,7 @@
 
             items.forEach((item, idx) => {
                 const trial = trials[idx];
-                const text = (trial.acronym + ' ' + trial.exactFullStudyName + ' ' + trial.sourceHypothesisText + ' ' + trial.exactInclusionCriteria.join(' ')).toLowerCase();
+                const text = (trial.acronym + ' ' + trial.exactFullStudyName + ' ' + (trial.sourceHypothesisText || '') + ' ' + trial.exactInclusionCriteria.join(' ')).toLowerCase();
                 
                 const matchesQuery = text.includes(query);
                 const matchesStatus = status === 'all' || trial.status === status;
