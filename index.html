@@ -1070,8 +1070,8 @@
         }
         .compliance-footer a:last-child {
             margin-right: 0;
-        }"
-"./* Respect users who prefer reduced motion (vestibular/a11y). */
+        }
+        /* Respect users who prefer reduced motion (vestibular/a11y). */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -1079,7 +1079,7 @@
                 transition-duration: 0.01ms !important;
                 scroll-behavior: auto !important;
             }
-        }.
+        }
     </style>
 </head>
 <body>
@@ -3352,7 +3352,7 @@
                     html += `
                         <div class="output-card ` + category + `">
                             <div class="output-header">
-                                <div class="output-title-group" style="cursor:pointer;" onclick="openTrialDetails('` + trial.acronym + `')">
+                                <div class="output-title-group" style="cursor:pointer;" role="button" tabindex="0" onclick="openTrialDetails('` + trial.acronym + `')" onkeydown="handleKeyboardSelect(event, () => openTrialDetails('` + trial.acronym + `'))">
                                     <span class="output-title" style="text-decoration: underline; text-decoration-style: dotted;">` + trial.acronym + `</span>
                                     <span class="output-subtitle">` + trial.exactFullStudyName + nctString + `</span>
                                 </div>
