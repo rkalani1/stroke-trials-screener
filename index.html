@@ -1122,11 +1122,11 @@
                             Stroke Classification
                         </h2>
                         <div class="card-options-grid" role="radiogroup" aria-label="Stroke Classification" style="grid-template-columns: repeat(2, 1fr);">
-                            <button class="option-card group-btn" onclick="selectStrokeGroup('ischemic_tia', this)" onkeydown="handleKeyboardSelect(event, () => selectStrokeGroup('ischemic_tia', this))">
+                            <button role="radio" aria-checked="false" class="option-card group-btn" onclick="selectStrokeGroup('ischemic_tia', this)" onkeydown="handleKeyboardSelect(event, () => selectStrokeGroup('ischemic_tia', this))">
                                 <span class="option-card-title">Ischemic Stroke / TIA</span>
                                 <span class="option-card-desc">AIS, LVO, MVO, or TIA</span>
                             </button>
-                            <button class="option-card group-btn" onclick="selectStrokeGroup('ich', this)" onkeydown="handleKeyboardSelect(event, () => selectStrokeGroup('ich', this))">
+                            <button role="radio" aria-checked="false" class="option-card group-btn" onclick="selectStrokeGroup('ich', this)" onkeydown="handleKeyboardSelect(event, () => selectStrokeGroup('ich', this))">
                                 <span class="option-card-title">Intracerebral Hemorrhage</span>
                                 <span class="option-card-desc">Hemorrhagic Stroke</span>
                             </button>
@@ -1134,11 +1134,11 @@
                         <div id="event_type_sub_container" style="display:none; margin-top: 1rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
                             <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Select Event Type</label>
                             <div class="card-options-grid" role="radiogroup" aria-label="Event Type" style="grid-template-columns: repeat(2, 1fr);">
-                                <button class="option-card" onclick="selectEventType('ischemic_stroke', this)" onkeydown="handleKeyboardSelect(event, () => selectEventType('ischemic_stroke', this))">
+                                <button role="radio" aria-checked="false" class="option-card" onclick="selectEventType('ischemic_stroke', this)" onkeydown="handleKeyboardSelect(event, () => selectEventType('ischemic_stroke', this))">
                                     <span class="option-card-title">Ischemic Stroke</span>
                                     <span class="option-card-desc">AIS, LVO, or MVO</span>
                                 </button>
-                                <button class="option-card" onclick="selectEventType('tia', this)" onkeydown="handleKeyboardSelect(event, () => selectEventType('tia', this))">
+                                <button role="radio" aria-checked="false" class="option-card" onclick="selectEventType('tia', this)" onkeydown="handleKeyboardSelect(event, () => selectEventType('tia', this))">
                                     <span class="option-card-title">TIA</span>
                                     <span class="option-card-desc">Transient Attack</span>
                                 </button>
@@ -2229,8 +2229,10 @@
             
             // Visual feedback for group buttons
             document.querySelectorAll('#flow_sec_1 .group-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#flow_sec_1 .group-btn').forEach(btn => btn.setAttribute('aria-checked', 'false'));
             if (element) {
                 element.classList.add('active');
+                element.setAttribute('aria-checked', 'true');
             }
 
             // Hide sub-container and other sections by default
@@ -2290,6 +2292,7 @@
                 // Show sub-selection
                 document.getElementById('event_type_sub_container').style.display = 'block';
                 document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.setAttribute('aria-checked', 'false'));
                 
                 calculateEligibility();
             }
@@ -2301,8 +2304,10 @@
             
             // Visual feedback
             document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.setAttribute('aria-checked', 'false'));
             if (element) {
                 element.classList.add('active');
+                element.setAttribute('aria-checked', 'true');
             }
             
             // Map to old classification system internally
