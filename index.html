@@ -3602,7 +3602,7 @@
                 ` : 'N/A';
 
                 item.innerHTML = `
-                    <div class="accordion-header" tabindex="0" onclick="toggleAccordion(this)" onkeydown="handleKeyboardSelect(event, () => toggleAccordion(this))">
+                    <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)" onkeydown="handleKeyboardSelect(event, () => toggleAccordion(this))">
                         <span>` + trial.acronym + ` - ` + trial.exactFullStudyName + `</span>
                         <span class="output-badge ` + badgeClass + `">` + badgeText + `</span>
                     </div>
@@ -3645,8 +3645,10 @@
             const item = header.parentElement;
             const isActive = item.classList.contains('active');
             document.querySelectorAll('.accordion-item').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.accordion-header').forEach(h => h.setAttribute('aria-expanded', 'false'));
             if (!isActive) {
                 item.classList.add('active');
+                header.setAttribute('aria-expanded', 'true');
             }
         }
 
