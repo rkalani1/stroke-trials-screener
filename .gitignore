@@ -1,0 +1,6 @@
+# Polish/working notes — never committed
+.polish/
+
+# Node
+node_modules/
+npm-debug.log*
