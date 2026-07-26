@@ -127,22 +127,25 @@
 
         .bottom-nav {
             position: fixed;
-            bottom: 0;
+            bottom: max(0.65rem, env(safe-area-inset-bottom));
             left: 50%;
             transform: translateX(-50%);
-            width: 100%;
-            max-width: 1280px;
-            background: var(--card-bg);
-            border-top: 1px solid var(--card-border);
-            border-left: 1px solid var(--card-border);
-            border-right: 1px solid var(--card-border);
+            width: calc(100% - 1.25rem);
+            max-width: 520px;
+            background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            padding: 0.5rem 0;
+            gap: .35rem;
+            padding: .4rem;
+            box-shadow: 0 16px 36px rgba(0,0,0,.3);
+            backdrop-filter: blur(16px);
             z-index: 100;
         }
 
         .nav-item {
+            min-height: 50px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -154,10 +157,12 @@
             font-weight: 500;
             cursor: pointer;
             gap: 0.2rem;
+            border-radius: 9px;
         }
 
         .nav-item.active {
             color: var(--accent-secondary);
+            background: var(--accent-primary-glow);
         }
 
         .nav-item svg {
@@ -238,6 +243,7 @@
             font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
+            min-height: 40px;
         }
 
         .install-btn {
@@ -253,6 +259,7 @@
             align-items: center;
             gap: 0.25rem;
             transition: all 0.2s ease;
+            min-height: 40px;
         }
 
         .install-btn:hover {
@@ -697,6 +704,7 @@
             width: 100%;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            min-height: 44px;
         }
 
         .action-btn:hover {
@@ -726,6 +734,57 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 48px;
+        }
+
+        .public-demo-notice {
+            padding: .65rem 1rem;
+        }
+
+        @media (max-width: 639px) {
+            body { padding-bottom: 5.5rem; }
+
+            .public-demo-notice {
+                padding: .6rem .8rem;
+                font-size: .78rem !important;
+                line-height: 1.35 !important;
+            }
+
+            header {
+                padding: .65rem .8rem;
+            }
+
+            .container {
+                padding: .75rem;
+            }
+
+            .glass-panel {
+                padding: 1rem;
+                border-radius: 10px;
+            }
+
+            .card-options-grid {
+                grid-template-columns: minmax(0, 1fr) !important;
+            }
+
+            .option-card,
+            .preset-pill {
+                min-height: 54px;
+            }
+
+            .search-container {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .search-container select {
+                width: 100% !important;
+                min-height: 44px;
+            }
+
+            .bottom-nav {
+                width: calc(100% - 1rem);
+            }
         }
 
         .accordion-header:hover {
@@ -1084,7 +1143,7 @@
 </head>
 <body>
     <div id="app_main_wrapper">
-    <div style="background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;padding:0.65rem 1rem;font-size:0.9rem;line-height:1.4;">
+    <div class="public-demo-notice" style="background:#fef3c7;color:#78350f;border-bottom:1px solid #f59e0b;font-size:0.9rem;line-height:1.4;">
         <strong>Synthetic public demo only.</strong> Do not enter real patient identifiers, PHI, or operational clinical data. This public GitHub Pages version is educational, not an official clinical or recruitment system. Registry matches are first-pass screens only and must be confirmed against the full ClinicalTrials.gov record and approved local study materials before clinical action.
     </div>
 
@@ -1106,10 +1165,10 @@
     </header>
 
     <!-- Main Container -->
-    <div class="container">
+    <main class="container">
 
         <!-- TAB 1: FLOWSHEET SCREENER -->
-        <div id="screener_tab" class="tab-content active">
+        <div id="screener_tab" class="tab-content active" role="tabpanel" aria-labelledby="nav_screener" aria-hidden="false">
             
             <div class="split-layout">
                 <!-- LEFT PANEL: Questionnaire Flowsheet -->
@@ -1219,7 +1278,7 @@
         </div>
 
         <!-- TAB 2: DETAILED STUDY DATABASE -->
-        <div id="database_tab" class="tab-content">
+        <div id="database_tab" class="tab-content" role="tabpanel" aria-labelledby="nav_database" aria-hidden="true">
             <div class="glass-panel">
                 <h2 class="section-title">Stroke Trials Protocol Database</h2>
                 
@@ -1240,15 +1299,15 @@
             </div>
         </div>
 
-    </div>
+    </main>
 
     <!-- Bottom Navigation Tabs -->
-    <nav class="bottom-nav" aria-label="Main Navigation">
-        <button id="nav_screener" class="nav-item active" onclick="switchTab('screener')">
+    <nav class="bottom-nav" aria-label="Main Navigation" role="tablist">
+        <button id="nav_screener" class="nav-item active" role="tab" aria-selected="true" aria-controls="screener_tab" onclick="switchTab('screener')">
             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
             Screener
         </button>
-        <button id="nav_database" class="nav-item" onclick="switchTab('database')">
+        <button id="nav_database" class="nav-item" role="tab" aria-selected="false" aria-controls="database_tab" onclick="switchTab('database')">
             <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
             Database
         </button>
@@ -3680,11 +3739,19 @@
 
         // Tab Switcher
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-hidden', 'true');
+            });
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+                nav.setAttribute('aria-selected', 'false');
+            });
             
             document.getElementById(tabId + '_tab').classList.add('active');
+            document.getElementById(tabId + '_tab').setAttribute('aria-hidden', 'false');
             document.getElementById('nav_' + tabId).classList.add('active');
+            document.getElementById('nav_' + tabId).setAttribute('aria-selected', 'true');
         }
 
         // Keyboard Handler
