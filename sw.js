@@ -1,6 +1,8 @@
-const CACHE_NAME = 'stroke-trials-v22';
+const CACHE_NAME = 'stroke-trials-v23';
 const ASSETS = [
   'index.html',
+  'styles.css',
+  'app.js',
   'manifest.json',
   'icon.svg'
 ];
