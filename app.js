@@ -1,0 +1,2808 @@
+        // State Management
+        let p_classification = '';
+        let p_stroke_group = '';
+        let p_event_type = '';
+        let p_onsetVal = 2;
+        let p_onsetUnit = 'hours';
+        let p_onsetMode = 'categories';
+        let p_metricsInteracted = true; // Always evaluate dynamically
+
+        // Metrics State
+        let p_age = 'unselected';
+        let p_nihss = 'unselected';
+        let p_aspects = 'unselected';
+        let p_gcs = 'unselected';
+        let p_preMrs = 'unselected';
+        let p_vessel = 'unselected';
+        let p_etiology = 'unselected';
+        let p_ich_location = 'unselected';
+        let p_volume = 'unselected';
+        let p_statin = 'unselected';
+        let p_language = 'unselected';
+        let p_rehab = 'unselected';
+        let p_self_consent = 'unselected';
+        let p_availability_54w = 'unselected';
+        let p_ueWeakness = 'unselected';
+        let p_unilateralSymptomatic = 'unselected';
+
+        // Custom parameters not covered by dropdowns but mapped to parameters
+        let p_anteriorCirculation = 'unselected';
+        let p_presentedWithin24h = 'unselected';
+        let p_singleAntiplateletSoc = 'unselected';
+        let p_afibHistory = 'unselected';
+        let p_takingOac = 'unselected';
+
+        // Exclusions state checklist
+        let exclusionsState = {};
+
+        // Canonical trials data structure from source
+        const CTGOV_FIRST_PASS_NOTE = "First-pass ClinicalTrials.gov summary: not all registry criteria, protocol details, local activation requirements, or consent rules are encoded in this public demo.";
+        const trials = [
+            {
+                acronym: "SISTER",
+                exactFullStudyName: "Strategy for Improving Stroke Treatment Response",
+                sourceHypothesisText: "A Phase-2, prospective, randomized, placebo-controlled, blinded, dose finding trial that aims to determine the safety and preliminary efficacy of TS23, a monoclonal antibody against the alpha-2 antiplasmin (a2-AP), in acute ischemic stroke.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov also requires favorable perfusion mismatch/core imaging and study drug within 120 minutes of qualifying perfusion imaging."],
+                timeCategory: "hyperacute",
+                enrollmentWindowText: "4.5 – 24 hours",
+                externalMetadata: { nct: "NCT05948566", registryUrl: "https://clinicaltrials.gov/study/NCT05948566", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Evaluates TS23 mAb (anti-alpha-2-antiplasmin) in AIS presenting within 4.5-24h without thrombolysis or EVT clot engagement.",
+                pathway: "Consult Stroke Research Coordinator / On-Call Stroke Fellow",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Anterior circulation acute ischemic stroke",
+                    "Onset within 4.5-24 hours",
+                    "NIHSS ≥ 4",
+                    "ASPECTS 6 or more on CT or ASPECTS 7 or more on MRI",
+                    "Favorable perfusion imaging mismatch/core profile"
+                ],
+                exactExclusionCriteria: [
+                    "Received thrombolysis",
+                    "Received EVT with clot engagement",
+                    "Known stroke in past 90 days",
+                    "Pre stroke MRS > 2"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (!p.anteriorCirculation) errors.push("Requires anterior circulation stroke");
+                    if (p.onsetHours < 4.5 || p.onsetHours > 24) errors.push("LKW-to-treatment window not 4.5-24h");
+                    if (p.nihss < 4) errors.push("NIHSS < 4");
+                    if (p.aspects < 6) errors.push("CT ASPECTS < 6");
+                    if (p.preMrs > 2) errors.push("Pre-stroke mRS > 2");
+                    if (p.exThrombolysis) errors.push("Excludes prior thrombolysis");
+                    if (p.exEvt) errors.push("Excludes prior EVT clot engagement");
+                    if (p.exStroke90d) errors.push("Excludes stroke in past 90 days");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        p.anteriorCirculation === true ? "Anterior circulation confirmed" : "",
+                        (p.onsetHours >= 4.5 && p.onsetHours <= 24) ? "LKW-to-treatment in 4.5-24h window" : "",
+                        p.nihss >= 4 ? 'NIHSS is ' + p.nihss + ' (meets ≥ 4)' : "",
+                        p.aspects >= 6 ? 'ASPECTS is ' + p.aspects + ' (meets ≥ 6)' : "",
+                        p.preMrs <= 2 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 2)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm stroke is in the anterior circulation (anterior circulation stroke is required)",
+                        !p.exThrombolysis ? "Confirm no prior thrombolysis administered" : "",
+                        !p.exEvt ? "Confirm no prior EVT with clot engagement" : "",
+                        !p.exStroke90d ? "Confirm no stroke in the past 90 days" : "",
+                        "Confirm favorable CT/MR perfusion mismatch/core criteria and study-drug timing per protocol"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "STEP",
+                exactFullStudyName: "StrokeNet Thrombectomy Endovascular Platform",
+                sourceHypothesisText: "STEP is a Randomized, Multifactorial, Adaptive, Registry-leveraged, Platform trial that seeks to optimize the care of patients with acute ischemic stroke (AIS) due to large or medium vessel occlusions (LVOs and MVOs). The currently open domain looks to expand indication for EVT.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires presentation to the enrolling hospital within 24 hours and arterial puncture within 2 hours of qualifying imaging; this demo does not encode every STEP domain exclusion."],
+                timeCategory: "hyperacute",
+                enrollmentWindowText: "⚡ EVT Window (≤ 24 hours)",
+                externalMetadata: { nct: "NCT06289985", registryUrl: "https://clinicaltrials.gov/study/NCT06289985", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Optimizes endovascular therapy for low NIHSS LVOs or non-dominant MVOs. Excludes dominant M2 branch.",
+                pathway: "Consult Stroke Research Coordinator / On-Call Stroke Fellow or Endovascular Coordinator",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Age 18 years or older and pre-stroke mRS 0-2",
+                    "Presentation to enrolling hospital within 24 hours and arterial puncture within 2 hours of qualifying imaging",
+                    "Branch 1: LVO patients with mild deficits/low NIHSS; NIHSS 0-5 and complete occlusion of the intracranial ICA or M1 MCA",
+                    "Branch 2: MVO/DMVO patients with non-dominant/co-dominant M2 or M3 occlusions; NIHSS ≥ 8"
+                ],
+                exactExclusionCriteria: [
+                    "CT ASPECT score <6",
+                    "Acute occlusions in multiple vascular territories",
+                    "Tandem occlusions"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (p.aspects < 6) errors.push("CT ASPECTS < 6 / MRI ASPECTS < 7");
+                    if (p.preMrs > 2) errors.push("Pre-stroke mRS > 2");
+
+                    const isB1 = (p.vessel === 'ica_m1' && p.nihss <= 5);
+                    const isB2 = (p.vessel === 'm2_m3_nd' && p.nihss >= 8);
+
+                    if (!isB1 && !isB2) {
+                        errors.push("Does not meet Branch 1 (NIHSS 0-5 + ICA/M1) or Branch 2 (NIHSS ≥ 8 + non-dominant/co-dominant M2/M3)");
+                    }
+                    if (p.vessel === 'dominant_m2') errors.push("Excludes dominant M2 occlusion");
+                    if (p.vessel === 'dominant_m3') errors.push("Excludes dominant M3 occlusion");
+                    if (p.exMultipleTerritories) errors.push("Excludes acute occlusions in multiple vascular territories");
+                    if (p.exTandem) errors.push("Excludes tandem occlusions");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    const isB1 = (p.vessel === 'ica_m1' && p.nihss !== 'unselected' && p.nihss <= 5);
+                    const isB2 = (p.vessel === 'm2_m3_nd' && p.nihss !== 'unselected' && p.nihss >= 8);
+                    let branchMatchText = '';
+                    if (isB1) branchMatchText = "Meets Branch 1 (Low NIHSS LVO: NIHSS 0-5 + ICA/M1)";
+                    else if (isB2) branchMatchText = "Meets Branch 2 (Severe MVO: NIHSS ≥ 8 + non-dominant M2/M3)";
+
+                    return [
+                        "Ischemic Stroke classification selected",
+                        (p.aspects !== 'unselected' && p.aspects >= 6) ? 'ASPECTS is ' + p.aspects + ' (meets CT ≥ 6 threshold)' : "",
+                        p.preMrs <= 2 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 2)' : "",
+                        branchMatchText
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exTandem ? "Confirm no tandem occlusions" : "",
+                        !p.exMultipleTerritories ? "Confirm no acute occlusions in multiple territories" : "",
+                        "Confirm vessel anatomy on CTA/MRA (no dominant M2/M3 branch)",
+                        "Confirm enrolling-hospital presentation and arterial puncture timing per STEP protocol"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "TESTED",
+                exactFullStudyName: "Treatment with Endovascular Intervention for Stroke Patients with Existing Disability",
+                sourceHypothesisText: "A prospective, observational study for persons with a pre-stroke mRS 3-4 experiencing an LVO-AIS, comparing the effectiveness of EVT to MMM.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "Assessment of pre-stroke disability during hospitalization and investigator determination that disability is not temporary are not encoded in this demo."],
+                timeCategory: "acute_subacute",
+                enrollmentWindowText: "Presentation ≤ 24 hours",
+                externalMetadata: { nct: "NCT05911568", registryUrl: "https://clinicaltrials.gov/study/NCT05911568", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Cohort study comparing EVT to Medical Management in LVO-AIS with pre-stroke mRS 3-4.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Acute ischemic stroke presenting within 24 hours of onset",
+                    "Caused by occlusion of ICA, M1, or dominant M2",
+                    "mRS 3-4 for at least 3 months prior to stroke onset",
+                    "Presenting CT ASPECTS ≥ 3 or MRI ASPECTS ≥ 4",
+                    "NIHSS ≥ 6"
+                ],
+                exactExclusionCriteria: [
+                    "Terminal illness at time of stroke",
+                    "Assessment of pre-stroke functional status cannot be performed during the hospital stay",
+                    "Pre-stroke disability deemed temporary by the investigator"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (p.vessel !== 'ica_m1' && p.vessel !== 'dominant_m2') errors.push("Requires ICA, M1, or dominant M2 occlusion");
+                    if (p.preMrs !== 3 && p.preMrs !== 4) errors.push("Pre-stroke mRS must be exactly 3 or 4");
+                    if (p.nihss < 6) errors.push("NIHSS < 6");
+                    if (p.aspects < 3) errors.push("CT ASPECTS < 3 / MRI ASPECTS < 4");
+                    if (!p.presentedWithin24h) errors.push("Did not present within 24h of onset");
+                    if (p.exTerminalIllness) errors.push("Excludes terminal illness");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        (p.vessel === 'ica_m1' || p.vessel === 'dominant_m2') ? 'Vessel is ' + p.vessel : "",
+                        (p.preMrs === 3 || p.preMrs === 4) ? 'Pre-stroke mRS is ' + p.preMrs : "",
+                        p.nihss >= 6 ? 'NIHSS is ' + p.nihss + ' (meets ≥ 6)' : "",
+                        p.aspects >= 3 ? 'ASPECTS is ' + p.aspects + ' (meets CT ≥ 3 threshold)' : "",
+                        p.presentedWithin24h === true ? "Presented to study hospital within 24h of LKW" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm patient arrived at the facility within 24 hours of stroke onset (presented within 24h)",
+                        !p.exTerminalIllness ? "Confirm no terminal illness" : "",
+                        "Confirm pre-stroke disability has been stable for at least 3 months",
+                        "Confirm pre-stroke functional status can be assessed during hospitalization and is not temporary"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "MINUTE",
+                exactFullStudyName: "Minimally Invasive Neuroendoscopic Ultra-Early Targeted ICH Evacuation",
+                sourceHypothesisText: "A prospective, multi-center, randomized, controlled, blinded assessor, adaptive enrichment design, clinical trial to evaluate the utility of early/ultra-early SCUBA evacuation in patients with BGH and LKW-to-randomization time ≤ 16 hours.",
+                status: "soon",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov overall status as of 2026-05-28: NOT_YET_RECRUITING; listed study start date 2026-05-15.", "CT.gov also requires CTA/MRA without vascular lesion, expected surgery start <120 minutes from randomization, coagulation/lab review, goals-of-care consent, and other exclusions not fully encoded here."],
+                timeCategory: "hyperacute",
+                enrollmentWindowText: "≤ 16 hours",
+                externalMetadata: { nct: "NCT07260916", registryUrl: "https://clinicaltrials.gov/study/NCT07260916", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Ultra-early SCUBA endoscopic evacuation of basal ganglia hemorrhages (volume ≥ 20mL) within 16h.",
+                pathway: "Consult Stroke Research Coordinator / On-Call Neurosurgery Service",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Basal Ganglia hemorrhage ≥ 20mL",
+                    "Within 16 hours of last known well",
+                    "NIHSS ≥ 6",
+                    "Pre-ICH mRS 0-2",
+                    "Age 18-80 years",
+                    "CTA or MRA performed without an underlying vascular lesion",
+                    "Treating physician anticipates surgery can start <120 minutes from randomization"
+                ],
+                exactExclusionCriteria: [
+                    "Suspected secondary cause for ICH",
+                    "Infratentorial or thalamic hemorrhage",
+                    "Midbrain extension/involvement",
+                    "GCS score < 7 at presentation"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ich') errors.push("Requires ICH");
+                    if (p.ichLocation !== 'bg') errors.push("Requires deep Basal Ganglia location");
+                    if (p.volume !== 'bg_large') errors.push("Requires hematoma volume ≥ 20 mL");
+                    if (p.onsetHours > 16) errors.push("LKW-to-randomization > 16 hours");
+                    if (p.nihss < 6) errors.push("NIHSS < 6");
+                    if (p.gcs < 7) errors.push("GCS < 7");
+                    if (p.preMrs > 2) errors.push("Pre-ICH mRS > 2");
+                    if (p.age < 18 || p.age > 80) errors.push("Age must be 18-80 years");
+                    if (p.exSecondaryIch) errors.push("Excludes suspected secondary cause");
+                    if (p.exMidbrain) errors.push("Excludes midbrain extension");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "ICH classification selected",
+                        p.ichLocation === 'bg' ? "Basal Ganglia location confirmed" : "",
+                        p.volume === 'bg_large' ? "Volume ≥ 20mL confirmed" : "",
+                        p.onsetHours <= 16 ? "LKW-to-randomization is ≤ 16h" : "",
+                        p.nihss >= 6 ? 'NIHSS is ' + p.nihss + ' (meets ≥ 6)' : "",
+                        p.gcs >= 7 ? 'GCS is ' + p.gcs + ' (meets ≥ 7)' : "",
+                        p.preMrs <= 2 ? 'Pre-ICH mRS is ' + p.preMrs + ' (meets ≤ 2)' : "",
+                        (p.age >= 18 && p.age <= 80) ? 'Age is ' + p.age + ' (meets 18-80)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exSecondaryIch ? "Confirm no secondary cause (AVM, aneurysm, tumor, SAH)" : "",
+                        !p.exMidbrain ? "Confirm no midbrain extension/involvement" : "",
+                        "Confirm CTA/MRA shows no underlying vascular lesion, coagulation criteria are met, and surgical timing/goals-of-care criteria are satisfied"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "CLARITY",
+                exactFullStudyName: "Cilostazol for Prevention of Recurrent Stroke",
+                sourceHypothesisText: "A Phase 3 randomized trial evaluating cilostazol for prevention of recurrent stroke in patients with stroke or TIA within 180 days who are taking aspirin or clopidogrel, but not both.",
+                status: "soon",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov overall status as of 2026-05-28: NOT_YET_RECRUITING; listed study start date 2026-08.", "Public CT.gov eligibility text for NCT07174414 does not state the older draft's stroke-subtype or TIA risk-score thresholds; those criteria are not used in this demo."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "≤ 180 days",
+                externalMetadata: { nct: "NCT07174414", registryUrl: "https://clinicaltrials.gov/study/NCT07174414", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Phase 3 trial of cilostazol in stroke or TIA within 180 days while taking aspirin or clopidogrel, but not both.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Stroke or TIA within 180 days",
+                    "Age ≥ 40 years",
+                    "Currently taking aspirin or clopidogrel, but not both"
+                ],
+                exactExclusionCriteria: [
+                    "Spontaneous brain hemorrhage within the last 2 years",
+                    "Moderate to severe heart failure",
+                    "Life expectancy < 6 months"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic' && p.classification !== 'tia') {
+                        errors.push("Requires Ischemic Stroke or TIA");
+                    }
+                    if (p.onsetDays > 180) errors.push("Stroke/TIA occurred > 180 days ago");
+                    if (p.age < 40) errors.push("Age < 40");
+                    if (!p.singleAntiplateletSoc) {
+                        errors.push("Requires standard-of-care single antiplatelet (Aspirin or Clopidogrel)");
+                    }
+                    if (p.exBrainBleed2y) errors.push("Excludes spontaneous brain hemorrhage within the last 2 years");
+                    if (p.exCongestiveHeartFailure) errors.push("Excludes moderate-to-severe heart failure / congestive heart failure");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    const isWithinOnset = (p.onsetDays !== 'unselected' && p.onsetDays <= 180);
+                    let explanation = '';
+                    if ((p.classification === 'ischemic' || p.classification === 'tia') && isWithinOnset) {
+                        explanation = "Matches the CT.gov event-window criterion: stroke or TIA within 180 days";
+                    }
+
+                    return [
+                        explanation,
+                        (p.age !== 'unselected' && p.age >= 40) ? 'Age is ' + p.age + ' (meets ≥ 40)' : "",
+                        p.singleAntiplateletSoc === true ? "Taking single antiplatelet (aspirin/clopidogrel)" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        p.classification === 'unselected' ? "Confirm event type is Ischemic Stroke or TIA" : "",
+                        p.singleAntiplateletSoc === 'unselected' ? "Confirm patient is on aspirin or clopidogrel, but not both" : "",
+                        !p.exBrainBleed2y ? "Confirm no spontaneous brain bleed in the past 2 years" : "",
+                        !p.exCongestiveHeartFailure ? "Confirm no moderate/severe congestive heart failure" : "",
+                        "Wait for trial enrollment to officially open"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "INTERCEPT",
+                exactFullStudyName: "Carotid Implants for PreveNtion of STrokE ReCurrEnce from Large Vessel Occlusion in Atrial Fibrillation Patients Treated with Oral Anticoagulation",
+                sourceHypothesisText: "To assess the efficacy and safety of bilateral carotid filters as an adjunct to OAC in AF patients who suffered an ischemic stroke in the previous year.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires one of three OAC-at-index timing groups, planned VKA/DOAC use for the trial duration, SAPT plus OAC tolerability, and detailed bilateral carotid anatomy criteria not fully encoded here."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "≤ 365 days",
+                externalMetadata: { nct: "NCT05723926", registryUrl: "https://clinicaltrials.gov/study/NCT05723926", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Bilateral carotid filters in patients with clinical AF and an ischemic stroke with positive neuroimaging within 52 weeks; planned OAC is required.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Documented history of clinical atrial fibrillation",
+                    "Ischemic stroke with positive neuroimaging within 52 weeks, in one of the CT.gov-defined OAC timing groups",
+                    "Planned VKA or DOAC use for the duration of the trial",
+                    "Able to tolerate single antiplatelet therapy plus OAC for 6 months",
+                    "Bilateral ultrasound or angiogram demonstrating protocol-defined carotid anatomy"
+                ],
+                exactExclusionCriteria: [
+                    "history of ICH",
+                    "Contraindication to additional single antiplatelet therapy for 6 months from randomization",
+                    "≥50% stenosis, or high-risk plaque of the common carotid, subclavian, vertebral, or intracranial arteries that has not been treated with a revascularization procedure"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires ischemic stroke with positive neuroimaging (does not match TIA alone)");
+                    if (p.onsetDays > 365) errors.push("Stroke onset > 365 days ago");
+                    if (!p.afibHistory) errors.push("Requires clinical atrial fibrillation history");
+                    if (p.exPriorIchHistory) errors.push("Excludes history of ICH");
+                    if (p.exSaptContraindication) errors.push("Excludes patients with SAPT contraindication");
+                    if (p.exCarotidStenosis50) errors.push("Excludes carotid/vertebral/subclavian/intracranial stenosis ≥50%");
+                    if (p.exPregnancy) errors.push("Excludes pregnancy");
+                    if (p.exLifeExpectancy2y) errors.push("Excludes life expectancy < 2 years");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        p.onsetDays <= 365 ? "Onset within past year" : "",
+                        p.afibHistory === true ? "AFib history confirmed" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exPriorIchHistory ? "Confirm no history of spontaneous ICH" : "",
+                        !p.exSaptContraindication ? "Confirm patient can tolerate 6 months of add-on single antiplatelet" : "",
+                        !p.exCarotidStenosis50 ? "Confirm no untreated carotid/vertebral/intracranial stenosis ≥50%" : "",
+                        "Confirm CT.gov OAC timing group, planned VKA/DOAC duration, and bilateral carotid anatomy requirements"
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "ESUS",
+                exactFullStudyName: "Qualitative model-based ESUS reclassification using cardiac and cerebral vessel wall MRI",
+                sourceHypothesisText: "Use of a cardiac vessel wall MRI along with cerebellar vessel wall imaging can help to reclassify ESUS ischemic stroke patients into either cardioembolic or large artery atherosclerosis etiology using a qualitative model.",
+                status: "placeholder",
+                sourceCompletenessStatus: "not_registry_verified",
+                sourceGaps: ["No matching ClinicalTrials.gov record was found from exact acronym/title searches on 2026-05-28; this local study cannot be registry-verified on the public demo without an NCT or approved source document."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "≤ 180 days",
+                externalMetadata: { nct: "", registryUrl: "", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Local study summary is not ClinicalTrials.gov-verified; do not use this public demo to screen or refer until an approved source/NCT is attached.",
+                pathway: "Registry/source verification required before use",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Acute ischemic stroke of ESUS, cardioembolic, or large artery atherosclerosis etiology",
+                    "able to get the scan within 6 months of stroke onset"
+                ],
+                exactExclusionCriteria: [
+                    "age less than 35",
+                    "eGFR < 35",
+                    "contraindication to MRI with gadolinium contrast",
+                    "surgery within 30 days prior to stroke onset"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (p.etiology !== 'esus' && p.etiology !== 'cardioembolic' && p.etiology !== 'laa') {
+                        errors.push("Etiology must be ESUS, cardioembolic, or LAA");
+                    }
+                    if (p.onsetDays > 180) errors.push("Scan cannot be completed within 6 months of onset");
+                    if (p.age < 35) errors.push("Age < 35");
+                    if (p.exEgfr35) errors.push("eGFR < 35");
+                    if (p.exMriContraindication) errors.push("Excludes MRI/gadolinium contraindications");
+                    if (p.exRecentSurgery30d) errors.push("Excludes surgery within 30 days prior to stroke onset");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        (p.etiology === 'esus' || p.etiology === 'cardioembolic' || p.etiology === 'laa') ? 'Etiology matches: ' + p.etiology.toUpperCase() + ' (Trial accepts ESUS, Cardioembolic, or LAA to study reclassification)' : "",
+                        p.onsetDays <= 180 ? "Scan feasible within 6 months of onset" : "",
+                        p.age >= 35 ? 'Age is ' + p.age + ' (meets ≥ 35)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exEgfr35 ? "Confirm eGFR is ≥ 35 ml/min/1.73m²" : "",
+                        !p.exMriContraindication ? "Confirm no MRI or gadolinium contrast contraindications" : "",
+                        !p.exRecentSurgery30d ? "Confirm no surgery within 30 days prior to stroke onset" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "MOCHA",
+                exactFullStudyName: "Automated Intracranial Vessel Wall Analysis Pipeline for Multi-contrast Multi-platform Applications",
+                sourceHypothesisText: "Use of intracranial vessel wall imaging along with other clinical findings can be used to identify etiology of ESUS patients using a qualitative model.",
+                status: "placeholder",
+                sourceCompletenessStatus: "not_registry_verified",
+                sourceGaps: ["No matching ClinicalTrials.gov record was found from exact acronym/title searches on 2026-05-28; this local study cannot be registry-verified on the public demo without an NCT or approved source document."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "≤ 120 days",
+                externalMetadata: { nct: "", registryUrl: "", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Local study summary is not ClinicalTrials.gov-verified; do not use this public demo to screen or refer until an approved source/NCT is attached.",
+                pathway: "Registry/source verification required before use",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Acute ischemic stroke of ESUS etiology",
+                    "able to receive the scan within 4 months of stroke onset"
+                ],
+                exactExclusionCriteria: [
+                    "Age less than 35",
+                    "eGFR < 35",
+                    "contraindication to MRI with gadolinium contrast",
+                    "history of bilateral carotid artery revascularization"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (p.etiology !== 'esus') errors.push("Requires ESUS etiology");
+                    if (p.onsetDays > 120) errors.push("Scan cannot be completed within 4 months of onset");
+                    if (p.age < 35) errors.push("Age < 35");
+                    if (p.exEgfr35) errors.push("eGFR < 35");
+                    if (p.exMriContraindication) errors.push("Excludes MRI/gadolinium contraindications");
+                    if (p.exBilateralCarotidRevasc) errors.push("Excludes history of bilateral carotid artery revascularization");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        p.etiology === 'esus' ? "ESUS etiology confirmed" : "",
+                        p.onsetDays <= 120 ? "Scan feasible within 4 months of onset" : "",
+                        p.age >= 35 ? 'Age is ' + p.age + ' (meets ≥ 35)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exEgfr35 ? "Confirm eGFR is ≥ 35 ml/min/1.73m²" : "",
+                        !p.exMriContraindication ? "Confirm no MRI or gadolinium contrast contraindications" : "",
+                        !p.exBilateralCarotidRevasc ? "Confirm no history of bilateral carotid endarterectomy or stenting" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "ASPIRE",
+                exactFullStudyName: "Anticoagulation in Intracerebral Hemorrhage (ICH) Survivors for Stroke Prevention and Recovery",
+                sourceHypothesisText: "A prospective, randomized, double blind clinical trial to determine if apixaban is superior to aspirin for prevention of the composite outcome of any stroke (hemorrhagic or ischemic) or death from any cause in patients with recent ICH and AF.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov includes renal, hepatic, hematologic, pregnancy, blood pressure, allergy, competing-trial, and AVM-security exclusions not fully encoded here."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "14 – 180 days",
+                externalMetadata: { nct: "NCT03907046", registryUrl: "https://clinicaltrials.gov/study/NCT03907046", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Apixaban vs Aspirin in patients with recent ICH (randomized 14-180 days post-onset) and non-valvular AFib.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Intracerebral hemorrhage (ICH), including primary intraventricular hemorrhage, confirmed by brain CT or MRI",
+                    "non-valvular Afib",
+                    "can be randomized within 14-180 days of stroke onset"
+                ],
+                exactExclusionCriteria: [
+                    "Suspected secondary cause for ICH",
+                    "prior ICH within 12 months of index stroke",
+                    "clear indication for anticoagulation or antiplatelet therapy"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ich') errors.push("Requires ICH");
+                    if (!p.afibHistory) errors.push("Requires clinical atrial fibrillation history");
+                    if (p.onsetDays < 14 || p.onsetDays > 180) errors.push("LKW-to-randomization not 14-180 days");
+                    if (p.exSecondaryIch) errors.push("Excludes suspected secondary cause");
+                    if (p.exPriorIch12m) errors.push("Excludes prior ICH within 12 months");
+                    if (p.exClearAnticoagulationIndication) errors.push("Excludes patients with clear indication for OAC");
+                    if (p.exClearAntiplateletIndication) errors.push("Excludes patients with clear indication for antiplatelet");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "ICH classification selected",
+                        p.afibHistory === true ? "AFib history confirmed" : "",
+                        (p.onsetDays >= 14 && p.onsetDays <= 180) ? "Onset within 14-180 days window" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exSecondaryIch ? "Confirm no secondary cause (AVM, aneurysm, tumor, SAH)" : "",
+                        !p.exPriorIch12m ? "Confirm no other ICH in past 12 months" : "",
+                        !p.exClearAnticoagulationIndication ? "Confirm no mandatory indication for anticoagulation (e.g. mechanical valve, DVT/PE)" : "",
+                        !p.exClearAntiplateletIndication ? "Confirm no mandatory indication for antiplatelets (e.g. recent coronary stent)" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "SATURN",
+                exactFullStudyName: "Statins Use in Intracerebral Hemorrhage Patients",
+                sourceHypothesisText: "To determine the effects of continuation vs. discontinuation of statins on the risk of ICH recurrence during 24 months of follow-up in patients presenting with a spontaneous lobar ICH while taking a statin drug.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov includes statin-prescriber consultation/randomization agreement, PCSK9/familial hypercholesterolemia, severe dementia, statin safety, and withdrawal-of-care exclusions not fully encoded here."],
+                timeCategory: "acute_subacute",
+                enrollmentWindowText: "≤ 7 days",
+                externalMetadata: { nct: "NCT03936361", registryUrl: "https://clinicaltrials.gov/study/NCT03936361", verificationDate: "2026-06-30" },
+                conciseBedsideSummary: "Statin continuation vs discontinuation after spontaneous lobar ICH (within 7 days) in patients taking a statin at onset.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology Service",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Spontaneous lobar ICH confirmed by CT or MRI",
+                    "can be randomized within 7 days of stroke onset",
+                    "age ≥50",
+                    "taking a statin drug at onset",
+                    "patient or LAR agrees to randomization after consultation with the statin prescriber"
+                ],
+                exactExclusionCriteria: [
+                    "Suspected secondary cause for the ICH",
+                    "ICH score > 3",
+                    "MI within past 3 months",
+                    "pre stroke mRS >3",
+                    "life expectancy < 2 years"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ich') errors.push("Requires ICH");
+                    if (p.ichLocation !== 'lobar') errors.push("Requires Lobar ICH");
+                    if (p.onsetDays > 7) errors.push("LKW-to-randomization > 7 days");
+                    if (p.age < 50) errors.push("Age < 50");
+                    if (!p.statin) errors.push("Requires patient to be taking a statin at onset");
+                    if (p.preMrs > 3) errors.push("Pre-stroke mRS > 3");
+                    if (p.exSecondaryIch) errors.push("Excludes suspected secondary cause");
+                    if (p.exIchScore3) errors.push("Excludes ICH score > 3");
+                    if (p.exRecentMi3m) errors.push("Excludes MI within past 3 months");
+                    if (p.exLifeExpectancy2y) errors.push("Excludes life expectancy < 2 years");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "ICH classification selected",
+                        p.ichLocation === 'lobar' ? "Lobar ICH location confirmed" : "",
+                        p.onsetDays <= 7 ? "Onset within 7 days window" : "",
+                        p.age >= 50 ? 'Age is ' + p.age + ' (meets ≥ 50)' : "",
+                        p.statin === true ? "Taking statin drug at onset" : "",
+                        p.preMrs <= 3 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 3)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        !p.exSecondaryIch ? "Confirm no secondary cause (AVM, aneurysm, tumor, SAH)" : "",
+                        !p.exIchScore3 ? "Confirm clinical ICH score is ≤ 3" : "",
+                        !p.exRecentMi3m ? "Confirm no Myocardial Infarction in the past 3 months" : "",
+                        !p.exLifeExpectancy2y ? "Confirm life expectancy is ≥ 2 years" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "CAPPRICORN-1",
+                exactFullStudyName: "A Study to Investigate the Efficacy, Safety, and Tolerability of ALN-APP in Patients with CAA",
+                sourceHypothesisText: "A randomized, double-blind, placebo-controlled, phase 2 trial to assess the safety and efficacy of intrathecally injected ALN-APP for treatment of patients with Cerebral Amyloid Angiopathy.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "This demo cannot distinguish sporadic CAA age >=50 from Dutch-type CAA age >=30 with E693Q APP mutation, and it does not encode ALT/AST, recent investigational agent, or amyloid-antibody exclusions."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "Chronic",
+                externalMetadata: { nct: "NCT06393712", registryUrl: "https://clinicaltrials.gov/study/NCT06393712", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Intrathecal ALN-APP in sporadic probable CAA or Dutch-type CAA; prior clinical ICH is not required by the public CT.gov inclusion criteria.",
+                pathway: "Consult Stroke Research Coordinator / Stroke Neurology",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Sporadic CAA: age ≥ 50 years and probable CAA per Boston Criteria Version 2.0",
+                    "Dutch-type CAA: age ≥ 30 years and known E693Q amyloid precursor protein (APP) mutation"
+                ],
+                exactExclusionCriteria: [
+                    "Moderate or severe Alzheimer's disease or significant cognitive impairment",
+                    "Previous clinical ICH with onset < 90 days before anticipated randomization",
+                    "ALT or AST > 3x upper limit of normal",
+                    "eGFR < 30 ml/min/1.73m²"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.age < 30) errors.push("Age < 30 (requires ≥ 50 for sporadic CAA or ≥ 30 for Dutch-type CAA)");
+                    if (p.classification === 'ich' && p.onsetDays < 90) errors.push("Prior clinical ICH onset < 90 days before anticipated randomization");
+                    if (p.exSevereAphasiaCognitive) errors.push("Excludes moderate-to-severe cognitive impairment / Alzheimer's");
+                    if (p.exEgfr30) errors.push("eGFR < 30");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        p.age >= 30 ? 'Age is ' + p.age + ' (meets criteria)' : "",
+                        (p.classification !== 'ich' || p.onsetDays >= 90) ? "No clinical ICH within 90 days identified in entered fields" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm sporadic probable CAA by Boston Criteria Version 2.0 or Dutch-type CAA with known E693Q APP mutation",
+                        "Confirm no prior clinical ICH with onset < 90 days before randomization",
+                        !p.exSevereAphasiaCognitive ? "Confirm no moderate/severe cognitive impairment or Alzheimer's" : "",
+                        !p.exEgfr30 ? "Confirm eGFR is ≥ 30 ml/min/1.73m²" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "SCOUTS-3",
+                exactFullStudyName: "Stroke and CPAP Outcome Study 3",
+                sourceHypothesisText: "Among stroke survivors with OSA undergoing inpatient rehabilitation, an intensive multimodal CPAP support intervention will improve CPAP adherence during rehabilitation and through 3 months post-randomization compared with standard support, potentially enhancing stroke recovery and reducing recurrent events.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires CT/MRI proof of acute ischemic infarction or intraparenchymal hemorrhage within 30 days and includes oxygen, aspiration-risk, sedative, surgery, and anticipated rehab length-of-stay exclusions not fully encoded here."],
+                timeCategory: "acute_subacute",
+                enrollmentWindowText: "≤ 30 days",
+                externalMetadata: { nct: "NCT06722755", registryUrl: "https://clinicaltrials.gov/study/NCT06722755", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Among stroke survivors with OSA undergoing inpatient rehabilitation, intensive CPAP support compared with standard support.",
+                pathway: "EPIC Chat Stroke Rehab Team / Stroke Research Coordinator",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Age >= 18",
+                    "Acute ischemic stroke or ICH within past 30 days",
+                    "Head CT or brain MRI demonstrating acute ischemic infarction or intraparenchymal hemorrhage within 30 days",
+                    "On or moving to inpatient rehabilitation with anticipated length of stay at least 5 nights",
+                    "Spanish or English speaking"
+                ],
+                exactExclusionCriteria: [
+                    "incarcerated",
+                    "pregnant",
+                    "mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min",
+                    "CPAP use within 14 days pre-CVA",
+                    "CVA related to tumor, vascular malformation, or SAH"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic' && p.classification !== 'ich') {
+                        errors.push("Requires Ischemic Stroke or ICH");
+                    }
+                    if (p.age < 18) errors.push("Age < 18");
+                    if (p.onsetDays > 30) errors.push("Stroke occurred > 30 days ago");
+                    if (p.rehab !== 'yes') {
+                        errors.push("Must have inpatient rehabilitation placement and expected length of stay ≥ 5 nights");
+                    }
+                    if (p.language !== 'english' && p.language !== 'spanish') {
+                        errors.push("Must be English or Spanish speaking");
+                    }
+                    if (p.exIncarcerated) errors.push("Excludes incarcerated patients");
+                    if (p.exPregnancy) errors.push("Excludes pregnant patients");
+                    if (p.exTrach) errors.push("Excludes mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min");
+                    if (p.exCpapUse14d) errors.push("Excludes prior CPAP use within 14 days pre-CVA");
+                    if (p.exSecondaryIchOrSah) errors.push("Excludes stroke related to tumor, vascular malformation, or SAH");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke or ICH classification selected",
+                        p.age >= 18 ? 'Age is ' + p.age + ' (meets ≥ 18)' : "",
+                        p.onsetDays <= 30 ? "Onset within 30 days window" : "",
+                        (p.rehab === 'yes') ? "Inpatient rehabilitation placement confirmed" : "",
+                        (p.language === 'english' || p.language === 'spanish') ? "Language is English or Spanish" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm patient speaks English or Spanish",
+                        "Confirm inpatient rehabilitation placement and anticipated length of stay at least 5 nights",
+                        !p.exIncarcerated ? "Confirm no prisoner/incarcerated status" : "",
+                        !p.exPregnancy ? "Confirm not pregnant" : "",
+                        !p.exTrach ? "Confirm no mechanical ventilation, tracheostomy, or supplemental oxygen > 4 L/min" : "",
+                        !p.exCpapUse14d ? "Confirm no prior CPAP use within 14 days pre-stroke" : "",
+                        !p.exSecondaryIchOrSah ? "Confirm stroke was not caused by tumor, vascular malformation, or SAH" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "VERIFY",
+                exactFullStudyName: "Validation of Early Prognostic Data for Recovery Outcome after Stroke for Future, Higher Yield Trials",
+                sourceHypothesisText: "Patients have different UE outcomes depending on corticomotor system (CMS) function, measured as motor evoked potential (MEP) status with TMS, and on CMS structure, measured as acute lesion load with MRI. VERIFY will create the first multicenter, large-scale, prospective dataset of clinical, TMS, and MRI measures in the acute stroke time window.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires SAFE score <=8 within 48-96 hours, Day 90 in-person availability, and MRI/TMS contraindication screening not fully encoded here."],
+                timeCategory: "acute_subacute",
+                enrollmentWindowText: "24 – 96 hours",
+                externalMetadata: { nct: "NCT05338697", registryUrl: "https://clinicaltrials.gov/study/NCT05338697", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "TMS and MRI predictors of upper extremity recovery. Requires consent within 24-96h of LNW.",
+                pathway: "Consult Rehab Research Coordinator / Inpatient Rehab Team",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Unilaterally symptomatic acute ischemic stroke",
+                    "Motor deficits in the affected upper extremity with SAFE score ≤ 8 within 48-96 hours",
+                    "able to consent for themselves",
+                    "able to consent within 24-96 hours of LNW",
+                    "English or Spanish speaking"
+                ],
+                exactExclusionCriteria: [
+                    "Upper extremity condition that limited use prior to the enrolling stroke",
+                    "legally blind",
+                    "dense sensory loss of NIHSS=2",
+                    "symptomatic stroke within 30 days prior to enrolling event",
+                    "seizure since stroke onset",
+                    "MRI or TMS contraindication"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (!p.unilateralSymptomatic) errors.push("Requires unilateral symptomatic AIS");
+                    if (!p.exUeWeakness) errors.push("Requires upper extremity motor weakness");
+                    if (!p.self_consent) errors.push("Patient must be able to self-consent");
+                    if (p.onsetHours < 24 || p.onsetHours > 96) errors.push("LKW-to-consent window not 24-96h");
+                    if (p.language !== 'english' && p.language !== 'spanish') {
+                        errors.push("Must be English or Spanish speaking");
+                    }
+                    if (p.exPriorUeCondition) errors.push("Excludes prior UE condition limiting use");
+                    if (p.exLegallyBlind) errors.push("Excludes legally blind patients");
+                    if (p.exDenseSensoryLoss) errors.push("Excludes dense sensory loss (NIHSS sensory=2)");
+                    if (p.exRecentStroke30d) errors.push("Excludes symptomatic stroke within 30 days prior");
+                    if (p.exSeizures) errors.push("Excludes seizure since stroke onset");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        p.unilateralSymptomatic === true ? "Unilateral symptomatic AIS confirmed" : "",
+                        p.exUeWeakness === true ? "Upper extremity motor deficit confirmed" : "",
+                        p.self_consent === true ? "Patient able to self-consent" : "",
+                        (p.onsetHours >= 24 && p.onsetHours <= 96) ? "LKW-to-consent is in 24-96h window" : "",
+                        (p.language === 'english' || p.language === 'spanish') ? "Language is English or Spanish" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm unilateral symptomatic AIS",
+                        "Confirm patient speaks English or Spanish",
+                        "Confirm patient is able to self-consent",
+                        !p.exPriorUeCondition ? "Confirm no prior upper extremity condition limiting use" : "",
+                        !p.exLegallyBlind ? "Confirm not legally blind" : "",
+                        !p.exDenseSensoryLoss ? "Confirm NIHSS sensory score is < 2 (not dense sensory loss)" : "",
+                        !p.exRecentStroke30d ? "Confirm no symptomatic stroke in prior 30 days" : "",
+                        !p.exSeizures ? "Confirm no seizures since stroke onset" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "MR-PICS",
+                exactFullStudyName: "Motor Recovery through Plasticity-Inducing Cortical Stimulation",
+                sourceHypothesisText: "To assess the safe use of the CorTec Brain Interchange for use in providing cortical stimulation for stroke rehabilitation studies and establishing the technical feasibility of delivering plasticity-inducing stimulation within stroke patients. We hope to use this preliminary safety and feasibility data to inform a potential future study to collect preliminary efficacy data regarding the use of stimulation-induced neuroplasticity to improve stroke rehabilitation motor functional outcomes",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires UEFM 25-45, at least 30% corticospinal pathway preservation on MRI, observable motor output to TMS, and additional surgical/device safety screening not fully encoded here."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "> 6 months",
+                externalMetadata: { nct: "NCT06506279", registryUrl: "https://clinicaltrials.gov/study/NCT06506279", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "Invasive cortical stimulation in chronic stroke patients (stroke > 6 months prior, post-stroke mRS 3-4, available for 54 weeks).",
+                pathway: "Consult Rehab Research Coordinator",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "History of ischemic cortical stroke at least 6 months prior",
+                    "ages 22-75",
+                    "Post-stroke mRS 3-4",
+                    "UEFM score 25-45 with upper limb impairment",
+                    "Minimum 30% corticospinal pathway preservation on MRI and observable upper-limb motor output to TMS",
+                    "available for duration of study period (54 weeks) for in person visits"
+                ],
+                exactExclusionCriteria: [
+                    "On anticoagulation",
+                    "history of DVT or pulmonary emboli",
+                    "history of seizure",
+                    "history of spontaneous ICH",
+                    "unable to consent for themselves"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic') errors.push("Requires Ischemic Stroke");
+                    if (p.onsetMonths < 6) errors.push("Requires chronic phase > 6 months post-stroke");
+                    if (p.age < 22 || p.age > 75) errors.push("Requires age 22-75");
+                    if (p.preMrs !== 3 && p.preMrs !== 4) errors.push("Current (post-stroke) mRS must be 3 or 4");
+                    if (!p.exUeWeakness) errors.push("Requires moderate unilateral upper extremity weakness");
+                    if (!p.availability_54w) errors.push("Requires availability for 54 weeks of visits");
+                    if (!p.self_consent) errors.push("Patient must be able to self-consent");
+                    if (p.exAnticoagulation) errors.push("Excludes patients taking anticoagulants");
+                    if (p.exHistoryDvtPe) errors.push("Excludes history of DVT or pulmonary emboli");
+                    if (p.exSeizures) errors.push("Excludes history of seizures/epilepsy");
+                    if (p.exPriorIchHistory) errors.push("Excludes history of spontaneous ICH");
+                    if (p.exPregnancy) errors.push("Excludes pregnancy");
+                    if (p.exSevereSpasticity) errors.push("Excludes severe spasticity in target arm");
+                    if (p.exArmInjury) errors.push("Excludes arm fracture or orthopedic injury");
+                    if (p.exSevereAphasiaCognitive) errors.push("Excludes severe aphasia or cognitive impairment");
+                    if (p.exSevereClaustrophobia) errors.push("Excludes severe claustrophobia");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke classification selected",
+                        p.onsetMonths >= 6 ? "Stroke occurred > 6 months ago" : "",
+                        (p.age >= 22 && p.age <= 75) ? 'Age is ' + p.age + ' (meets 22-75)' : "",
+                        (p.preMrs === 3 || p.preMrs === 4) ? 'Current mRS is ' + p.preMrs : "",
+                        p.exUeWeakness === true ? "Unilateral upper extremity weakness confirmed" : "",
+                        p.availability_54w === true ? "Available for 54-week in-person visits" : "",
+                        p.self_consent === true ? "Patient able to self-consent" : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm patient is able to self-consent",
+                        "Confirm availability for 54 weeks of in-person follow-up visits",
+                        "Confirm UEFM 25-45, corticospinal pathway preservation, and TMS motor output requirements",
+                        !p.exAnticoagulation ? "Confirm not on anticoagulants (DOAC/warfarin/heparin)" : "",
+                        !p.exHistoryDvtPe ? "Confirm no history of DVT or pulmonary emboli" : "",
+                        !p.exSeizures ? "Confirm no history of seizures or epilepsy" : "",
+                        !p.exPriorIchHistory ? "Confirm no history of spontaneous ICH" : ""
+                    ].filter(Boolean);
+                }
+            },
+            {
+                acronym: "TELE-REHAB-2",
+                exactFullStudyName: "Telerehabilitation in the home after stroke",
+                sourceHypothesisText: "Adding a 6-week course of intensive Telerehabilitation to usual care after stroke results in superior functional outcomes compared to usual care alone.",
+                status: "enrolling",
+                sourceCompletenessStatus: "first_pass",
+                sourceGaps: [CTGOV_FIRST_PASS_NOTE, "CT.gov requires ARAT 18-44, Box & Block affected arm >=1 block/60 seconds, ability to perform 3 exercise examples, and self-signed consent/behavioral contract; not all are encoded here."],
+                timeCategory: "subacute_chronic",
+                enrollmentWindowText: "90 – 150 days",
+                externalMetadata: { nct: "NCT06682429", registryUrl: "https://clinicaltrials.gov/study/NCT06682429", verificationDate: "2026-05-28" },
+                conciseBedsideSummary: "6-week course of intensive home telerehabilitation in patients 90-150 days post-ischemic or hemorrhagic stroke.",
+                pathway: "Consult Rehab Coordinator",
+                noContactInfo: true,
+                exactInclusionCriteria: [
+                    "Ischemic stroke or ICH between 90-150 days prior to randomization",
+                    "age 18-80",
+                    "Action Research Arm Test score 18-44 at baseline",
+                    "Box & Block Test affected arm score ≥1 block in 60 seconds",
+                    "Able to perform all 3 rehabilitation exercise test examples",
+                    "Informed consent and behavioral contract signed by the subject; no surrogate consent"
+                ],
+                exactExclusionCriteria: [
+                    "mRS prior to stroke of >2",
+                    "a new stroke has occurred since index stroke",
+                    "a separate stroke occurred within 30 days prior to index stroke",
+                    "life expectancy < 9months",
+                    "botulinum toxin to the paretic arm received in the prior 3 months or expected by the 8-month visit"
+                ],
+                check: (p) => {
+                    const errors = [];
+                    if (p.classification !== 'ischemic' && p.classification !== 'ich') {
+                        errors.push("Requires Ischemic Stroke or ICH");
+                    }
+                    if (p.onsetDays < 90 || p.onsetDays > 150) errors.push("LKW-to-randomization not 90-150 days");
+                    if (p.age < 18 || p.age > 80) errors.push("Requires age 18-80");
+                    if (!p.exUeWeakness) errors.push("Requires moderate upper extremity weakness");
+                    if (!p.self_consent) errors.push("Patient must be able to self-consent");
+                    if (p.preMrs > 2) errors.push("Pre-stroke mRS > 2");
+                    if (p.exRecurrentStroke) errors.push("Excludes recurrent stroke since index stroke");
+                    if (p.exRecentStroke30d) errors.push("Excludes separate stroke within 30 days prior");
+                    if (p.exLifeExpectancy9m) errors.push("Excludes life expectancy < 9 months");
+                    if (p.exBotoxVns3m) errors.push("Excludes botulinum toxin to the paretic arm within 3 months, or expected by the 8-month visit");
+                    return errors;
+                },
+                matchedCriteriaText: (p) => {
+                    return [
+                        "Ischemic Stroke or ICH classification selected",
+                        (p.onsetDays >= 90 && p.onsetDays <= 150) ? "Onset within 90-150 days window" : "",
+                        (p.age >= 18 && p.age <= 80) ? 'Age is ' + p.age + ' (meets 18-80)' : "",
+                        p.exUeWeakness === true ? "Upper extremity weakness confirmed" : "",
+                        p.self_consent === true ? "Patient able to self-consent" : "",
+                        p.preMrs <= 2 ? 'Pre-stroke mRS is ' + p.preMrs + ' (meets ≤ 2)' : ""
+                    ].filter(Boolean);
+                },
+                pendingCriteriaText: (p) => {
+                    return [
+                        "Confirm patient is able to self-consent",
+                        !p.exRecurrentStroke ? "Confirm no recurrent stroke since the index stroke" : "",
+                        !p.exRecentStroke30d ? "Confirm no separate stroke within 30 days prior to the index stroke" : "",
+                        !p.exLifeExpectancy9m ? "Confirm life expectancy is ≥ 9 months" : "",
+                        !p.exBotoxVns3m ? "Confirm no botulinum toxin to the paretic arm in prior 3 months or expected by the 8-month visit" : ""
+                    ].filter(Boolean);
+                }
+            }
+        ];
+
+        // Stroke Group Selection
+        function selectStrokeGroup(group, element) {
+            p_stroke_group = group;
+            p_metricsInteracted = false;
+
+            // Visual feedback for group buttons
+            document.querySelectorAll('#flow_sec_1 .group-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#flow_sec_1 .group-btn').forEach(btn => btn.setAttribute('aria-checked', 'false'));
+            if (element) {
+                element.classList.add('active');
+                element.setAttribute('aria-checked', 'true');
+            }
+
+            // Hide sub-container and other sections by default
+            document.getElementById('event_type_sub_container').style.display = 'none';
+            document.getElementById('flow_sec_2').style.display = 'none';
+            document.getElementById('flow_sec_3').style.display = 'none';
+
+            // Reset all variables to prevent state leakages
+            p_event_type = '';
+            p_classification = '';
+            exclusionsState = {};
+            p_age = 'unselected';
+            p_nihss = 'unselected';
+            p_aspects = 'unselected';
+            p_gcs = 'unselected';
+            p_preMrs = 'unselected';
+            p_vessel = 'unselected';
+            p_etiology = 'unselected';
+            p_ich_location = 'unselected';
+            p_volume = 'unselected';
+            p_statin = 'unselected';
+            p_language = 'unselected';
+            p_rehab = 'unselected';
+            p_self_consent = 'unselected';
+            p_availability_54w = 'unselected';
+            p_ueWeakness = 'unselected';
+            p_unilateralSymptomatic = 'unselected';
+            p_anteriorCirculation = 'unselected';
+            p_presentedWithin24h = 'unselected';
+            p_singleAntiplateletSoc = 'unselected';
+            p_afibHistory = 'unselected';
+            p_takingOac = 'unselected';
+
+            if (group === 'ich') {
+                p_event_type = 'ich';
+                p_classification = 'ich';
+
+                // Show sections 2, 3
+                document.getElementById('flow_sec_2').style.display = 'block';
+                document.getElementById('flow_sec_3').style.display = 'block';
+
+                p_onsetVal = 3;
+                p_onsetUnit = 'hours';
+
+                const slider = document.getElementById('wz_onset');
+                if (slider) slider.value = "3";
+
+                setupOnsetPresets();
+                switchOnsetMode('categories');
+                compileDynamicMetrics();
+                compileDynamicExclusions();
+                calculateEligibility();
+            } else if (group === 'ischemic_tia') {
+                p_event_type = 'unselected';
+                p_classification = 'unselected';
+
+                // Show sub-selection
+                document.getElementById('event_type_sub_container').style.display = 'block';
+                document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.setAttribute('aria-checked', 'false'));
+
+                calculateEligibility();
+            }
+        }
+
+        // Event Type Selection
+        function selectEventType(type, element) {
+            p_event_type = type;
+
+            // Visual feedback
+            document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('#event_type_sub_container .option-card').forEach(card => card.setAttribute('aria-checked', 'false'));
+            if (element) {
+                element.classList.add('active');
+                element.setAttribute('aria-checked', 'true');
+            }
+
+            // Map to old classification system internally
+            if (type === 'ischemic_stroke') {
+                p_classification = 'ischemic';
+                p_onsetVal = 2;
+                p_onsetUnit = 'hours';
+                const slider = document.getElementById('wz_onset');
+                if (slider) slider.value = "2";
+            } else if (type === 'tia') {
+                p_classification = 'tia';
+                p_onsetVal = 12;
+                p_onsetUnit = 'hours';
+                const slider = document.getElementById('wz_onset');
+                if (slider) slider.value = "12";
+            }
+
+            // Reveal sections 2, 3
+            document.getElementById('flow_sec_2').style.display = 'block';
+            document.getElementById('flow_sec_3').style.display = 'block';
+
+            setupOnsetPresets();
+            switchOnsetMode('categories');
+            compileDynamicMetrics();
+            compileDynamicExclusions();
+            calculateEligibility();
+        }
+
+        // Switch Onset Mode
+        function switchOnsetMode(mode) {
+            p_onsetMode = mode;
+            document.getElementById('onset_mode_categories_btn').classList.toggle('active', mode === 'categories');
+            document.getElementById('onset_mode_exact_btn').classList.toggle('active', mode === 'exact');
+
+            document.getElementById('onset_categories_wrapper').style.display = mode === 'categories' ? 'flex' : 'none';
+            document.getElementById('onset_exact_wrapper').style.display = mode === 'exact' ? 'block' : 'none';
+
+            calculateEligibility();
+        }
+
+        // Onset Presets
+        function setupOnsetPresets() {
+            const wrapper = document.getElementById('onset_categories_wrapper');
+            if (!wrapper) return;
+            wrapper.innerHTML = '';
+
+            const categories = [
+                { name: '< 4.5h', val: 2, unit: 'hours', desc: 'Hyperacute' },
+                { name: '4.5 – 24h', val: 12, unit: 'hours', desc: 'Acute' },
+                { name: '24h – 7d', val: 3, unit: 'days', desc: 'Early Subacute' },
+                { name: '7 – 30d', val: 15, unit: 'days', desc: 'Subacute' },
+                { name: '30 – 180d', val: 3, unit: 'months', desc: 'Late Subacute' },
+                { name: '> 6mo', val: 8, unit: 'months', desc: 'Chronic' }
+            ];
+
+            categories.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'preset-pill';
+                const isActive = (cat.unit === p_onsetUnit && cat.val === p_onsetVal);
+                if (isActive) btn.classList.add('active');
+
+                btn.innerHTML = `
+                    <div style="font-weight:700;">${cat.name}</div>
+                    <div style="font-size:0.6rem; opacity:0.8; margin-top:0.1rem;">${cat.desc}</div>
+                `;
+
+                btn.onclick = () => {
+                    document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    p_onsetUnit = cat.unit;
+                    p_onsetVal = cat.val;
+
+                    const slider = document.getElementById('wz_onset');
+                    if (slider) {
+                        setWzOnsetUnit(cat.unit, false);
+                        slider.value = cat.val;
+                    }
+                    onsetSliderInput(false);
+                };
+                wrapper.appendChild(btn);
+            });
+        }
+
+        // Onset Sliders
+        function setWzOnsetUnit(unit, resetValue = true) {
+            p_onsetUnit = unit;
+            document.getElementById('wz_onset_hours_btn').classList.toggle('active', unit === 'hours');
+            document.getElementById('wz_onset_days_btn').classList.toggle('active', unit === 'days');
+            document.getElementById('wz_onset_months_btn').classList.toggle('active', unit === 'months');
+
+            const slider = document.getElementById('wz_onset');
+            if (!slider) return;
+            if (unit === 'hours') {
+                slider.min = "0";
+                slider.max = "72";
+                slider.step = "0.5";
+                if (resetValue) slider.value = "2";
+                document.getElementById('wz_onset_label').innerText = "LKW Time (Hours)";
+            } else if (unit === 'days') {
+                slider.min = "0";
+                slider.max = "365";
+                slider.step = "1";
+                if (resetValue) slider.value = "10";
+                document.getElementById('wz_onset_label').innerText = "LKW Time (Days)";
+            } else {
+                slider.min = "0";
+                slider.max = "24";
+                slider.step = "0.5";
+                if (resetValue) slider.value = "6";
+                document.getElementById('wz_onset_label').innerText = "LKW Time (Months)";
+            }
+            if (resetValue) onsetSliderInput(false);
+        }
+
+        function onsetSliderInput(resetMode = true) {
+            const slider = document.getElementById('wz_onset');
+            if (!slider) return;
+            const val = parseFloat(slider.value);
+            p_onsetVal = val;
+
+            const display = document.getElementById('wz_onset_display');
+            if (display) {
+                display.innerText = val + ' ' + p_onsetUnit.charAt(0).toUpperCase() + p_onsetUnit.slice(1);
+            }
+
+            if (resetMode && p_onsetMode === 'categories') {
+                document.querySelectorAll('.preset-pill').forEach(b => b.classList.remove('active'));
+            }
+
+            checkOnsetExclusions();
+            compileDynamicMetrics();
+            compileDynamicExclusions();
+            calculateEligibility();
+        }
+
+        function checkOnsetExclusions() {
+            let hours = p_onsetVal;
+            if (p_onsetUnit === 'days') hours = p_onsetVal * 24;
+            if (p_onsetUnit === 'months') hours = p_onsetVal * 30 * 24;
+
+            let warning = '';
+            if (p_classification === 'ischemic') {
+                if (hours < 4.5) {
+                    warning = "AIS onset < 4.5 hours is outside SISTER enrollment window (requires 4.5h to 24h).";
+                } else if (hours > 24) {
+                    warning = "AIS onset > 24 hours is outside hyperacute windows (SISTER, STEP).";
+                }
+            } else if (p_classification === 'ich') {
+                if (hours > 16) {
+                    warning = "ICH onset > 16 hours excludes MINUTE surgical evacuation.";
+                }
+            } else if (p_classification === 'tia') {
+                if (hours > 24) {
+                    warning = "TIA onset > 24 hours is outside acute secondary prevention evaluation window.";
+                }
+            }
+
+            const alertDiv = document.getElementById('onset_exclusion_warning');
+            if (alertDiv) {
+                if (warning) {
+                    document.getElementById('onset_exclusion_text').innerText = warning;
+                    alertDiv.style.display = 'block';
+                } else {
+                    alertDiv.style.display = 'none';
+                }
+            }
+        }
+
+        // Dynamic Form Elements (Clinical Parameters)
+        function compileDynamicMetrics() {
+            const container = document.getElementById('dynamic_metrics_container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            let html = '';
+
+            // Age Input (Universal, shown if classification selected or unselected)
+            html += `
+                <div class="form-row" onclick="p_metricsInteracted=true;">
+                    <div class="form-group" style="width:100%;">
+                        <label for="val_age_input">Patient Age (Years)</label>
+                        <input type="number" id="val_age_input" min="18" max="120" placeholder="e.g. 65" value="${p_age === 'unselected' ? '' : p_age}" oninput="p_age = (this.value === '') ? 'unselected' : parseInt(this.value); calculateEligibility();">
+                    </div>
+                </div>
+            `;
+
+            // Convert onset
+            let onsetHours = 0;
+            if (p_onsetUnit === 'hours') onsetHours = p_onsetVal;
+            else if (p_onsetUnit === 'days') onsetHours = p_onsetVal * 24;
+            else onsetHours = p_onsetVal * 30 * 24;
+
+            const onsetDays = onsetHours / 24.0;
+            const onsetMonths = onsetDays / 30.0;
+
+            // 1. NIHSS
+            const showNihss = (p_classification === 'ischemic') || (p_classification === 'ich' && onsetHours <= 16);
+            if (showNihss) {
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_nihss_input">NIHSS Severity Score</label>
+                            <input type="number" id="val_nihss_input" min="0" max="42" placeholder="e.g. 4" value="${p_nihss === 'unselected' ? '' : p_nihss}" oninput="p_nihss = (this.value === '') ? 'unselected' : parseInt(this.value); calculateEligibility();">
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Pre-stroke mRS (Show for all selected stroke types)
+            if (p_classification === 'ischemic' || p_classification === 'ich' || p_classification === 'tia') {
+                const isChronic = (p_classification === 'ischemic' && onsetMonths >= 6);
+                const mrsLabel = isChronic ? "Current mRS (Post-Stroke)" : "Pre-Stroke mRS";
+                const mrsSelectLabel = isChronic ? "Select Current mRS..." : "Select Pre-stroke mRS...";
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_pre_mrs">${mrsLabel}</label>
+                            <select id="val_pre_mrs" onchange="p_preMrs=(this.value === 'unselected') ? 'unselected' : parseInt(this.value); calculateEligibility();">
+                                <option value="unselected" ${p_preMrs==='unselected'?'selected':''}>${mrsSelectLabel}</option>
+                                <option value="0" ${p_preMrs===0?'selected':''}>0 - No symptoms</option>
+                                <option value="1" ${p_preMrs===1?'selected':''}>1 - No significant disability</option>
+                                <option value="2" ${p_preMrs===2?'selected':''}>2 - Slight disability (independent)</option>
+                                <option value="3" ${p_preMrs===3?'selected':''}>3 - Moderate disability (needs help but walks)</option>
+                                <option value="4" ${p_preMrs===4?'selected':''}>4 - Moderately severe (unable to walk)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 3. ASPECTS & Vessel status (hyperacute ischemic stroke workflows)
+            if (p_classification === 'ischemic' && onsetHours <= 24) {
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group">
+                            <label for="val_aspects_input">CT ASPECTS Score</label>
+                            <input type="number" id="val_aspects_input" min="0" max="10" placeholder="e.g. 8" value="${p_aspects === 'unselected' ? '' : p_aspects}" oninput="p_aspects = (this.value === '') ? 'unselected' : parseInt(this.value); calculateEligibility();">
+                        </div>
+                        <div class="form-group">
+                            <label for="val_vessel">Vessel Occlusion (CTA)</label>
+                            <select id="val_vessel" onchange="p_vessel=this.value; calculateEligibility();">
+                                <option value="unselected" ${p_vessel==='unselected'?'selected':''}>Select Vessel Status...</option>
+                                <option value="none" ${p_vessel==='none'?'selected':''}>None / No LVO</option>
+                                <option value="ica_m1" ${p_vessel==='ica_m1'?'selected':''}>Intracranial ICA / MCA M1</option>
+                                <option value="m2_m3_nd" ${p_vessel==='m2_m3_nd'?'selected':''}>Non-dominant/Co-dominant M2/M3</option>
+                                <option value="dominant_m2" ${p_vessel==='dominant_m2'?'selected':''}>Dominant M2 branch</option>
+                                <option value="dominant_m3" ${p_vessel==='dominant_m3'?'selected':''}>Dominant M3 branch</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 4. Anterior circulation (SISTER, ischemic <= 24h)
+            if (p_classification === 'ischemic' && onsetHours <= 24) {
+                html += `
+                    <div class="form-row" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_anterior_circ">Anterior Circulation?</label>
+                            <select id="val_anterior_circ" onchange="p_anteriorCirculation=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                <option value="unselected" ${p_anteriorCirculation==='unselected'?'selected':''}>Select...</option>
+                                <option value="yes" ${p_anteriorCirculation===true?'selected':''}>Yes</option>
+                                <option value="no" ${p_anteriorCirculation===false?'selected':''}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 5. Presented within 24h? (TESTED, ischemic <= 120h)
+            if (p_classification === 'ischemic' && onsetHours <= 120) {
+                html += `
+                    <div class="form-row" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_presented_24h">Presented within 24h of onset?</label>
+                            <select id="val_presented_24h" onchange="p_presentedWithin24h=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                <option value="unselected" ${p_presentedWithin24h==='unselected'?'selected':''}>Select...</option>
+                                <option value="yes" ${p_presentedWithin24h===true?'selected':''}>Yes</option>
+                                <option value="no" ${p_presentedWithin24h===false?'selected':''}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 6. ICH location, Hematoma volume, statin, afib (ICH workflows)
+            if (p_classification === 'ich') {
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_location">Hemorrhage Location</label>
+                            <select id="val_location" onchange="p_ich_location=this.value; calculateEligibility();">
+                                <option value="unselected" ${p_ich_location==='unselected'?'selected':''}>Select Hemorrhage Location...</option>
+                                <option value="bg" ${p_ich_location==='bg'?'selected':''}>Deep / Basal Ganglia</option>
+                                <option value="lobar" ${p_ich_location==='lobar'?'selected':''}>Lobar</option>
+                                <option value="thalamic" ${p_ich_location==='thalamic'?'selected':''}>Thalamic</option>
+                                <option value="infratentorial" ${p_ich_location==='infratentorial'?'selected':''}>Infratentorial</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+
+                if (onsetHours <= 16) {
+                    html += `
+                        <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                            <div class="form-group" style="width:100%;">
+                                <label for="val_volume">Hematoma Volume</label>
+                                <select id="val_volume" onchange="p_volume=this.value; calculateEligibility();">
+                                    <option value="unselected" ${p_volume==='unselected'?'selected':''}>Select Hematoma Volume...</option>
+                                    <option value="bg_small" ${p_volume==='bg_small'?'selected':''}>Small/Moderate (&lt; 20 mL)</option>
+                                    <option value="bg_large" ${p_volume==='bg_large'?'selected':''}>Large (&ge; 20 mL)</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group">
+                            <label for="val_statin">Statin at Onset</label>
+                            <select id="val_statin" onchange="p_statin=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                <option value="unselected" ${p_statin==='unselected'?'selected':''}>Select Statin status...</option>
+                                <option value="no" ${p_statin===false?'selected':''}>No Statin</option>
+                                <option value="yes" ${p_statin===true?'selected':''}>On Statin drug</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="val_afib_ich">AFib History</label>
+                            <select id="val_afib_ich" onchange="p_afibHistory=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                <option value="unselected" ${p_afibHistory==='unselected'?'selected':''}>Select AFib status...</option>
+                                <option value="no" ${p_afibHistory===false?'selected':''}>No AFib history</option>
+                                <option value="yes" ${p_afibHistory===true?'selected':''}>Clinical AFib</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 8. AFib & Anticoagulation (Ischemic / TIA)
+            if ((p_classification === 'ischemic' || p_classification === 'tia') && onsetDays <= 365) {
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group" style="width:100%;">
+                            <label for="val_afib_oac">AFib & Anticoagulation</label>
+                            <select id="val_afib_oac" onchange="updateAfibOac(this.value); calculateEligibility();">
+                                <option value="unselected" ${p_afibHistory==='unselected'?'selected':''}>Select AFib/OAC...</option>
+                                <option value="none" ${(p_afibHistory===false && p_takingOac===false)?'selected':''}>No AFib, not on OAC</option>
+                                <option value="afib_no_oac" ${(p_afibHistory===true && p_takingOac===false)?'selected':''}>AFib, not on OAC</option>
+                                <option value="afib_oac" ${(p_afibHistory===true && p_takingOac===true)?'selected':''}>AFib, on OAC</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 9. Subtype / Etiology & Single Antiplatelet (Ischemic / TIA, onset <= 180 days)
+            if ((p_classification === 'ischemic' || p_classification === 'tia') && onsetDays <= 180) {
+                html += `
+                    <div class="form-row" onclick="p_metricsInteracted=true;" style="margin-top:0.5rem;">
+                        <div class="form-group">
+                            <label for="val_etiology">Subtype / Etiology</label>
+                            <select id="val_etiology" onchange="p_etiology=this.value; calculateEligibility();">
+                                <option value="unselected" ${p_etiology==='unselected'?'selected':''}>Select Etiology...</option>
+                                <option value="laa" ${p_etiology==='laa'?'selected':''}>Large Artery Atherosclerosis (LAA)</option>
+                                <option value="lacunar" ${p_etiology==='lacunar'?'selected':''}>Lacunar / Small Vessel</option>
+                                <option value="esus" ${p_etiology==='esus'?'selected':''}>ESUS / Cryptogenic</option>
+                                <option value="other_noncardiac" ${p_etiology==='other_noncardiac'?'selected':''}>Other noncardiac-source subtype</option>
+                                <option value="cardioembolic" ${p_etiology==='cardioembolic'?'selected':''}>Cardioembolic</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="val_single_antiplatelet">Single Antiplatelet SOC?</label>
+                            <select id="val_single_antiplatelet" onchange="p_singleAntiplateletSoc=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                <option value="unselected" ${p_singleAntiplateletSoc==='unselected'?'selected':''}>Select...</option>
+                                <option value="yes" ${p_singleAntiplateletSoc===true?'selected':''}>Yes</option>
+                                <option value="no" ${p_singleAntiplateletSoc===false?'selected':''}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 10. Rehab and Recovery trial fields (MR-PICS, TR2, SCOUTS-3)
+            const showRehabFields = (p_classification === 'ischemic' || p_classification === 'ich') && (onsetHours >= 24);
+            if (showRehabFields) {
+                html += `
+                    <div style="margin-top:1rem; border-top:1px solid var(--card-border); padding-top:0.75rem;">
+                        <h3 style="font-size:0.8rem; font-weight:700; color:var(--text-main); margin-bottom:0.5rem;">Rehabilitation & Recovery Factors</h3>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="val_rehab">Planned Inpatient Rehab?</label>
+                                <select id="val_rehab" onchange="p_rehab=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_rehab==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_rehab===true?'selected':''}>Yes</option>
+                                    <option value="no" ${p_rehab===false?'selected':''}>No / Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="val_language">Language Spoken</label>
+                                <select id="val_language" onchange="p_language=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_language==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_language===true?'selected':''}>English or Spanish</option>
+                                    <option value="no" ${p_language===false?'selected':''}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row" style="margin-top:0.5rem;">
+                            <div class="form-group">
+                                <label for="val_ue_weakness">UE Deficit/Weakness?</label>
+                                <select id="val_ue_weakness" onchange="p_ueWeakness=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_ueWeakness==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_ueWeakness===true?'selected':''}>Yes</option>
+                                    <option value="no" ${p_ueWeakness===false?'selected':''}>No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="val_self_consent">Able to Self-Consent?</label>
+                                <select id="val_self_consent" onchange="p_self_consent=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_self_consent==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_self_consent===true?'selected':''}>Yes</option>
+                                    <option value="no" ${p_self_consent===false?'selected':''}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                `;
+
+                // 54-week visits (MR-PICS, Ischemic, onset >= 6m)
+                if (p_classification === 'ischemic' && onsetMonths >= 6) {
+                    html += `
+                        <div class="form-row" style="margin-top:0.5rem;">
+                            <div class="form-group" style="width:100%;">
+                                <label for="val_availability_54w">Available for 54-week visits?</label>
+                                <select id="val_availability_54w" onchange="p_availability_54w=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_availability_54w==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_availability_54w===true?'selected':''}>Yes</option>
+                                    <option value="no" ${p_availability_54w===false?'selected':''}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Unilateral AIS (VERIFY, Ischemic, onset 24h-96h)
+                if (p_classification === 'ischemic' && (onsetHours >= 24 && onsetHours <= 96)) {
+                    html += `
+                        <div class="form-row" style="margin-top:0.5rem;">
+                            <div class="form-group" style="width:100%;">
+                                <label for="val_unilateral_ais">Unilateral Symptomatic AIS?</label>
+                                <select id="val_unilateral_ais" onchange="p_unilateralSymptomatic=(this.value === 'unselected') ? 'unselected' : (this.value === 'yes'); calculateEligibility();">
+                                    <option value="unselected" ${p_unilateralSymptomatic==='unselected'?'selected':''}>Select...</option>
+                                    <option value="yes" ${p_unilateralSymptomatic===true?'selected':''}>Yes</option>
+                                    <option value="no" ${p_unilateralSymptomatic===false?'selected':''}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Helper to update AFib and OAC variables
+        function updateAfibOac(val) {
+            if (val === 'unselected') {
+                p_afibHistory = 'unselected';
+                p_takingOac = 'unselected';
+            } else if (val === 'none') {
+                p_afibHistory = false;
+                p_takingOac = false;
+            } else if (val === 'afib_no_oac') {
+                p_afibHistory = true;
+                p_takingOac = false;
+            } else if (val === 'afib_oac') {
+                p_afibHistory = true;
+                p_takingOac = true;
+            }
+        }
+
+        // Dynamic Exclusions Checklist
+        function compileDynamicExclusions() {
+            const container = document.getElementById('dynamic_exclusions_container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const medicalExGroup = {
+                title: "Scan for Key Clinical Exclusions (Must be NO/Unchecked)",
+                items: [
+                    { id: 'exThrombolysis', label: 'Prior Thrombolysis (tPA/TNK) for index stroke', def: false, classifications: ['ischemic'], trials: ['SISTER'] },
+                    { id: 'exEvt', label: 'Prior EVT with clot engagement', def: false, classifications: ['ischemic'], trials: ['SISTER'] },
+                    { id: 'exStroke90d', label: 'Known stroke in prior 90 days', def: false, classifications: ['ischemic'], trials: ['SISTER'] },
+                    { id: 'exMultipleTerritories', label: 'Acute occlusions in multiple vascular territories', def: false, classifications: ['ischemic'], trials: ['STEP'] },
+                    { id: 'exTandem', label: 'Tandem occlusions (cervical + intracranial)', def: false, classifications: ['ischemic'], trials: ['STEP'] },
+                    { id: 'exTerminalIllness', label: 'Terminal illness or life expectancy < 2y', def: false, classifications: ['ischemic', 'ich'], trials: ['TESTED', 'SATURN'] },
+                    { id: 'exSecondaryIch', label: 'Suspected secondary cause for ICH (AVM, aneurysm, tumor, SAH)', def: false, classifications: ['ich'], trials: ['MINUTE', 'ASPIRE', 'SATURN'] },
+                    { id: 'exMidbrain', label: 'Midbrain extension or infratentorial/thalamic location', def: false, classifications: ['ich'], trials: ['MINUTE'] },
+                    { id: 'exPriorIch12m', label: 'Prior ICH in past 12 months', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
+                    { id: 'exClearAnticoagulationIndication', label: 'Clear baseline indication for anticoagulation', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
+                    { id: 'exClearAntiplateletIndication', label: 'Clear baseline indication for antiplatelet therapy', def: false, classifications: ['ich'], trials: ['ASPIRE'] },
+                    { id: 'exIchScore3', label: 'Clinical ICH Score > 3', def: false, classifications: ['ich'], trials: ['SATURN'] },
+                    { id: 'exRecentMi3m', label: 'Myocardial Infarction within past 3 months', def: false, classifications: ['ich'], trials: ['SATURN'] },
+                    { id: 'exEgfr35', label: 'eGFR < 35 ml/min/1.73m²', def: false, classifications: ['ischemic'], trials: ['ESUS', 'MOCHA'] },
+                    { id: 'exMriContraindication', label: 'Contraindication to MRI or gadolinium contrast', def: false, classifications: ['ischemic'], trials: ['ESUS', 'MOCHA'] },
+                    { id: 'exRecentSurgery30d', label: 'Surgery within 30 days prior to stroke onset', def: false, classifications: ['ischemic'], trials: ['ESUS'] },
+                    { id: 'exBilateralCarotidRevasc', label: 'History of bilateral carotid endarterectomy/stenting', def: false, classifications: ['ischemic'], trials: ['MOCHA'] },
+                    { id: 'exPriorIchHistory', label: 'Prior history of spontaneous ICH / brain hemorrhage', def: false, classifications: ['ischemic', 'tia'], trials: ['INTERCEPT', 'MR-PICS'] },
+                    { id: 'exBrainBleed2y', label: 'Spontaneous brain bleed within past 2 years', def: false, classifications: ['ischemic', 'tia'], trials: ['CLARITY'] },
+                    { id: 'exSaptContraindication', label: 'Contraindication to additional SAPT for 6 months', def: false, classifications: ['ischemic'], trials: ['INTERCEPT'] },
+                    { id: 'exCarotidStenosis50', label: 'Carotid/vertebral/subclavian/intracranial stenosis ≥ 50%', def: false, classifications: ['ischemic'], trials: ['INTERCEPT'] },
+                    { id: 'exPregnancy', label: 'Pregnancy', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3', 'MR-PICS', 'TELE-REHAB-2'] },
+                    { id: 'exIncarcerated', label: 'Patient is incarcerated (prisoner)', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exTrach', label: 'Mechanical ventilation, tracheostomy, or oxygen > 4 L/min', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exCpapUse14d', label: 'CPAP use within 14 days pre-CVA', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exSecondaryIchOrSah', label: 'Stroke related to tumor, malformation, or SAH', def: false, classifications: ['ischemic', 'ich'], trials: ['SCOUTS-3'] },
+                    { id: 'exPriorUeCondition', label: 'Prior upper extremity condition limiting use', def: false, classifications: ['ischemic'], trials: ['VERIFY'] },
+                    { id: 'exLegallyBlind', label: 'Legally blind', def: false, classifications: ['ischemic'], trials: ['VERIFY'] },
+                    { id: 'exDenseSensoryLoss', label: 'Dense sensory loss (NIHSS sensory score = 2)', def: false, classifications: ['ischemic'], trials: ['VERIFY'] },
+                    { id: 'exRecentStroke30d', label: 'Separate symptomatic stroke within prior 30 days', def: false, classifications: ['ischemic', 'ich'], trials: ['VERIFY', 'TELE-REHAB-2'] },
+                    { id: 'exSeizures', label: 'Seizures since stroke onset / history of epilepsy', def: false, classifications: ['ischemic', 'ich'], trials: ['VERIFY', 'MR-PICS'] },
+                    { id: 'exBotoxVns3m', label: 'Botulinum toxin to paretic arm within past 3 months or expected by 8-month visit', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
+                    { id: 'exAnticoagulation', label: 'Currently taking anticoagulants', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exHistoryDvtPe', label: 'History of DVT or pulmonary emboli (PE)', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exRecurrentStroke', label: 'Recurrent stroke since the index stroke', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
+                    { id: 'exLifeExpectancy9m', label: 'Life expectancy < 9 months', def: false, classifications: ['ischemic', 'ich'], trials: ['TELE-REHAB-2'] },
+                    { id: 'exCongestiveHeartFailure', label: 'Congestive Heart Failure (moderate/severe)', def: false, classifications: ['ischemic', 'tia'], trials: ['CLARITY'] },
+                    { id: 'exSevereAphasiaCognitive', label: 'Moderate-to-severe cognitive impairment, dementia, or severe aphasia', def: false, classifications: ['ischemic', 'ich'], trials: ['MR-PICS', 'CAPPRICORN-1'] },
+                    { id: 'exSevereSpasticity', label: 'Severe spasticity in target arm', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exArmInjury', label: 'Arm fracture or orthopedic injury', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exSevereClaustrophobia', label: 'Severe claustrophobia', def: false, classifications: ['ischemic'], trials: ['MR-PICS'] },
+                    { id: 'exEgfr30', label: 'eGFR < 30 ml/min/1.73m²', def: false, classifications: ['ich'], trials: ['CAPPRICORN-1'] }
+                ]
+            };
+
+            let onsetHours = 0;
+            if (p_onsetUnit === 'hours') onsetHours = p_onsetVal;
+            else if (p_onsetUnit === 'days') onsetHours = p_onsetVal * 24;
+            else onsetHours = p_onsetVal * 30 * 24;
+
+            const onsetDays = onsetHours / 24.0;
+            const onsetMonths = onsetDays / 30.0;
+
+            const p = {
+                classification: p_classification,
+                onsetHours,
+                onsetDays,
+                onsetMonths,
+                age: p_age,
+                preMrs: p_preMrs,
+                nihss: p_nihss,
+                gcs: p_gcs
+            };
+
+            const activeTrials = [];
+            trials.forEach(t => {
+                if (isTrialPotentiallyActive(t, p)) {
+                    activeTrials.push(t.acronym);
+                }
+            });
+
+            const filteredItems = medicalExGroup.items.filter(item => {
+                if (!item.classifications.includes(p_classification)) return false;
+                return item.trials.some(acr => activeTrials.includes(acr));
+            });
+
+            if (filteredItems.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+            container.style.display = 'block';
+
+            const catDiv = document.createElement('div');
+            catDiv.className = 'exclusion-category';
+            catDiv.innerHTML = '<h3 class="exclusion-category-title">' + medicalExGroup.title + '</h3>';
+
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'checklist-group';
+
+            filteredItems.forEach(item => {
+                if (exclusionsState[item.id] === undefined) {
+                    exclusionsState[item.id] = item.def;
+                }
+
+                const itemBtn = document.createElement('button');
+                itemBtn.className = 'checklist-btn-item ' + (exclusionsState[item.id] ? 'checked' : '');
+                itemBtn.onclick = () => {
+                    p_metricsInteracted = true;
+                    exclusionsState[item.id] = !exclusionsState[item.id];
+                    itemBtn.classList.toggle('checked', exclusionsState[item.id]);
+                    calculateEligibility();
+                };
+
+                itemBtn.innerHTML = `
+                    <span class="checklist-label">${item.label}</span>
+                    <div class="checklist-indicator" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    </div>
+                `;
+                gridDiv.appendChild(itemBtn);
+            });
+
+            catDiv.appendChild(gridDiv);
+            container.appendChild(catDiv);
+        }
+
+        function isTrialPotentiallyActive(trial, p) {
+            if (trial.status === 'closed' || trial.status === 'placeholder') return false;
+            const res = evaluateTrialEligibility(trial, p);
+            return res.status !== 'excluded';
+        }
+
+        // Pure stateless functional checker
+        function evaluateTrialEligibility(trial, p) {
+            if (trial.status === 'closed') {
+                return {
+                    status: 'closed',
+                    matchedCriteria: [],
+                    pendingCriteria: [],
+                    exclusionReasons: ["Study is closed to enrollment"],
+                    sourceGaps: trial.sourceGaps || []
+                };
+            }
+            if (trial.status === 'placeholder') {
+                return {
+                    status: 'placeholder',
+                    matchedCriteria: [],
+                    pendingCriteria: [],
+                    exclusionReasons: ["Incomplete study profile in source; screening not possible"],
+                    sourceGaps: trial.sourceGaps || []
+                };
+            }
+
+            // Pessimistic scenario: resolve 'unselected' variables to their most restrictive values (fails eligibility)
+            const pessP = { ...p };
+            if (pessP.age === 'unselected') pessP.age = 17;
+            if (pessP.nihss === 'unselected') pessP.nihss = -1;
+            if (pessP.aspects === 'unselected') pessP.aspects = -1;
+            if (pessP.gcs === 'unselected') pessP.gcs = -1;
+            if (pessP.preMrs === 'unselected') pessP.preMrs = 6;
+            if (pessP.vessel === 'unselected') pessP.vessel = 'none';
+            if (pessP.etiology === 'unselected') pessP.etiology = 'none';
+            if (pessP.ichLocation === 'unselected') pessP.ichLocation = 'none';
+            if (pessP.volume === 'unselected') pessP.volume = 'none';
+            if (pessP.statin === 'unselected') pessP.statin = false;
+            if (pessP.afibHistory === 'unselected') pessP.afibHistory = false;
+            if (pessP.takingOac === 'unselected') pessP.takingOac = false;
+            if (pessP.language === 'unselected') pessP.language = 'other';
+            if (pessP.rehab === 'unselected') pessP.rehab = 'none';
+            if (pessP.self_consent === 'unselected') pessP.self_consent = false;
+            if (pessP.availability_54w === 'unselected') pessP.availability_54w = false;
+            if (pessP.exUeWeakness === 'unselected') pessP.exUeWeakness = false;
+            if (pessP.unilateralSymptomatic === 'unselected') pessP.unilateralSymptomatic = false;
+            if (pessP.anteriorCirculation === 'unselected') pessP.anteriorCirculation = false;
+            if (pessP.presentedWithin24h === 'unselected') pessP.presentedWithin24h = false;
+            if (pessP.singleAntiplateletSoc === 'unselected') pessP.singleAntiplateletSoc = false;
+
+            // Optimistic scenario: resolve 'unselected' variables to their most permissive values (passes eligibility if possible)
+            const optP = { ...p };
+            if (optP.age === 'unselected') {
+                if (trial.acronym === 'MR-PICS') optP.age = 45;
+                else if (trial.acronym === 'TELE-REHAB-2') optP.age = 45;
+                else optP.age = 65;
+            }
+            if (optP.nihss === 'unselected') {
+                if (trial.acronym === 'STEP') optP.nihss = 3;
+                else optP.nihss = 8;
+            }
+            if (optP.aspects === 'unselected') optP.aspects = 8;
+            if (optP.gcs === 'unselected') optP.gcs = 15;
+            if (optP.preMrs === 'unselected') {
+                if (trial.acronym === 'TESTED' || trial.acronym === 'MR-PICS') optP.preMrs = 3;
+                else optP.preMrs = 0;
+            }
+            if (optP.vessel === 'unselected') {
+                if (trial.acronym === 'STEP') optP.vessel = 'ica_m1';
+                else if (trial.acronym === 'TESTED') optP.vessel = 'ica_m1';
+                else optP.vessel = 'none';
+            }
+            if (optP.etiology === 'unselected') {
+                if (trial.acronym === 'ESUS' || trial.acronym === 'MOCHA') optP.etiology = 'esus';
+                else optP.etiology = 'other';
+            }
+            if (optP.ichLocation === 'unselected') {
+                if (trial.acronym === 'SATURN') optP.ichLocation = 'lobar';
+                else optP.ichLocation = 'bg';
+            }
+            if (optP.volume === 'unselected') {
+                if (trial.acronym === 'MINUTE') optP.volume = 'bg_large';
+                else optP.volume = 'small';
+            }
+            if (optP.statin === 'unselected') {
+                if (trial.acronym === 'SATURN') optP.statin = true;
+                else optP.statin = false;
+            }
+            if (optP.afibHistory === 'unselected') {
+                if (trial.acronym === 'INTERCEPT' || trial.acronym === 'ASPIRE') optP.afibHistory = true;
+                else optP.afibHistory = false;
+            }
+            if (optP.takingOac === 'unselected') {
+                if (trial.acronym === 'INTERCEPT') optP.takingOac = true;
+                else optP.takingOac = false;
+            }
+            if (optP.language === 'unselected') optP.language = 'english';
+            if (optP.rehab === 'unselected') optP.rehab = 'yes';
+            if (optP.self_consent === 'unselected') optP.self_consent = true;
+            if (optP.availability_54w === 'unselected') optP.availability_54w = true;
+            if (optP.exUeWeakness === 'unselected') optP.exUeWeakness = true;
+            if (optP.unilateralSymptomatic === 'unselected') optP.unilateralSymptomatic = true;
+            if (optP.anteriorCirculation === 'unselected') optP.anteriorCirculation = true;
+            if (optP.presentedWithin24h === 'unselected') optP.presentedWithin24h = true;
+            if (optP.singleAntiplateletSoc === 'unselected') optP.singleAntiplateletSoc = true;
+
+            const optErrors = trial.check(optP);
+            if (optErrors.length > 0) {
+                return {
+                    status: 'excluded',
+                    matchedCriteria: [],
+                    pendingCriteria: [],
+                    exclusionReasons: optErrors,
+                    sourceGaps: trial.sourceGaps || []
+                };
+            }
+
+            const pessErrors = trial.check(pessP);
+            const isSoon = (trial.status === 'soon' ||
+                            (trial.acronym === 'ASPIRE' && p.onsetDays < 14) ||
+                            (trial.acronym === 'VERIFY' && p.onsetHours < 24) ||
+                            (trial.acronym === 'TELE-REHAB-2' && p.onsetDays < 90));
+            const requiresSourceConfirmation = !!trial.sourceCompletenessStatus && trial.sourceCompletenessStatus !== 'complete';
+
+            const pendingFields = [];
+            const fieldsToTest = [
+                { key: 'age', failVal: 10, label: 'Age' },
+                { key: 'nihss', failVal: 0, label: 'NIHSS Score' },
+                { key: 'aspects', failVal: 3, label: 'ASPECTS Score' },
+                { key: 'gcs', failVal: 3, label: 'GCS Score' },
+                { key: 'preMrs', failVal: 5, label: 'mRS / functional status' },
+                { key: 'vessel', failVal: 'none', label: 'Vessel status' },
+                { key: 'etiology', failVal: 'cardioembolic', label: 'Stroke Subtype' },
+                { key: 'ichLocation', failVal: 'bg', label: 'Hemorrhage Location' },
+                { key: 'volume', failVal: 'bg_large', label: 'Hematoma Volume' },
+                { key: 'statin', failVal: false, label: 'Statin at onset' },
+                { key: 'afibHistory', failVal: false, label: 'Atrial Fibrillation history' },
+                { key: 'takingOac', failVal: false, label: 'Anticoagulation status' },
+                { key: 'language', failVal: 'other', label: 'Language spoken' },
+                { key: 'rehab', failVal: 'none', label: 'Rehab unit placement' },
+                { key: 'self_consent', failVal: false, label: 'Patient able to self-consent' },
+                { key: 'availability_54w', failVal: false, label: '54-week visits availability' },
+                { key: 'exUeWeakness', failVal: false, label: 'Upper extremity weakness' },
+                { key: 'unilateralSymptomatic', failVal: false, label: 'Unilateral symptomatic AIS' },
+                { key: 'anteriorCirculation', failVal: false, label: 'Anterior circulation' },
+                { key: 'presentedWithin24h', failVal: false, label: 'Presented within 24h' },
+                { key: 'singleAntiplateletSoc', failVal: false, label: 'Single antiplatelet SOC' }
+            ];
+
+            fieldsToTest.forEach(f => {
+                if (p[f.key] === 'unselected') {
+                    const testP = { ...optP };
+                    testP[f.key] = pessP[f.key];
+                    const testErrors = trial.check(testP);
+                    if (testErrors.length > optErrors.length) {
+                        pendingFields.push(f.label);
+                    }
+                }
+            });
+
+            if (requiresSourceConfirmation) {
+                pendingFields.push("Full registry/protocol confirmation");
+            }
+
+            if (pessErrors.length > 0 || pendingFields.length > 0) {
+                const pendingCriteria = trial.pendingCriteriaText(p).slice();
+                if (requiresSourceConfirmation) {
+                    pendingCriteria.push("Confirm the full ClinicalTrials.gov record, approved local protocol, activation status, consent path, and study-owner instructions before any clinical or recruitment action");
+                }
+                return {
+                    status: isSoon ? 'soon' : 'pending',
+                    matchedCriteria: trial.matchedCriteriaText(p),
+                    pendingCriteria: pendingCriteria,
+                    pendingFields: pendingFields,
+                    exclusionReasons: [],
+                    sourceGaps: trial.sourceGaps || []
+                };
+            }
+
+            return {
+                status: isSoon ? 'soon' : 'eligible',
+                matchedCriteria: trial.matchedCriteriaText(p),
+                pendingCriteria: trial.pendingCriteriaText(p),
+                pendingFields: [],
+                exclusionReasons: [],
+                sourceGaps: trial.sourceGaps || []
+            };
+        }
+
+        // Eligibility Match Calculation
+        function calculateEligibility() {
+            const listContainer = document.getElementById('wz_results_list');
+            updateBriefingCopyState();
+            if (!p_classification || p_classification === 'unselected' || p_classification === '') {
+                let promptMsg = 'Select stroke type and key variables to see matches.';
+                if (p_stroke_group === 'ischemic_tia' && (p_event_type === 'unselected' || p_event_type === '')) {
+                    promptMsg = 'Select Ischemic Stroke or TIA to continue.';
+                }
+                listContainer.innerHTML = '<div style="padding:1.5rem; text-align:center; color:var(--text-muted); font-size:0.85rem;">' + promptMsg + '</div>';
+                document.getElementById('wz_epic_output').innerText = promptMsg;
+                updateBriefingCopyState();
+                return;
+            }
+
+            // Convert sliders/number inputs
+            let onsetHours = 0;
+            if (p_onsetUnit === 'hours') onsetHours = p_onsetVal;
+            else if (p_onsetUnit === 'days') onsetHours = p_onsetVal * 24;
+            else onsetHours = p_onsetVal * 30 * 24;
+
+            const onsetDays = onsetHours / 24.0;
+            const onsetMonths = onsetDays / 30.0;
+
+            const params = {
+                classification: p_classification,
+                onsetHours,
+                onsetDays,
+                onsetMonths,
+                age: p_age,
+                nihss: p_nihss,
+                aspects: p_aspects,
+                gcs: p_gcs,
+                preMrs: p_preMrs,
+                vessel: p_vessel,
+                etiology: p_etiology,
+                ichLocation: p_ich_location,
+                volume: p_volume,
+                statin: p_statin,
+                language: p_language === true ? 'english' : (p_language === false ? 'other' : 'unselected'),
+                rehab: p_rehab === true ? 'yes' : (p_rehab === false ? 'none' : 'unselected'),
+                self_consent: p_self_consent,
+                availability_54w: p_availability_54w,
+                exUeWeakness: p_ueWeakness,
+                unilateralSymptomatic: p_unilateralSymptomatic,
+
+                anteriorCirculation: p_anteriorCirculation,
+                presentedWithin24h: p_presentedWithin24h,
+                singleAntiplateletSoc: p_singleAntiplateletSoc,
+                afibHistory: p_afibHistory,
+                takingOac: p_takingOac,
+
+                exThrombolysis: !!exclusionsState['exThrombolysis'],
+                exEvt: !!exclusionsState['exEvt'],
+                exStroke90d: !!exclusionsState['exStroke90d'],
+                exMultipleTerritories: !!exclusionsState['exMultipleTerritories'],
+                exTandem: !!exclusionsState['exTandem'],
+                exTerminalIllness: !!exclusionsState['exTerminalIllness'],
+                exSecondaryIch: !!exclusionsState['exSecondaryIch'],
+                exMidbrain: !!exclusionsState['exMidbrain'] || (p_ich_location === 'thalamic' || p_ich_location === 'infratentorial'),
+                exMassiveIvh: !!exclusionsState['exMassiveIvh'],
+                exAbsentBrainstem: !!exclusionsState['exAbsentBrainstem'],
+                exEvdEvacuation: !!exclusionsState['exEvdEvacuation'],
+                exPriorIch12m: !!exclusionsState['exPriorIch12m'],
+                exClearAnticoagulationIndication: !!exclusionsState['exClearAnticoagulationIndication'],
+                exClearAntiplateletIndication: !!exclusionsState['exClearAntiplateletIndication'],
+                exIchScore3: !!exclusionsState['exIchScore3'],
+                exRecentMi3m: !!exclusionsState['exRecentMi3m'],
+                exLifeExpectancy2y: !!exclusionsState['exLifeExpectancy2y'],
+                exLifeExpectancy9m: !!exclusionsState['exLifeExpectancy9m'],
+                exEgfr35: !!exclusionsState['exEgfr35'],
+                exMriContraindication: !!exclusionsState['exMriContraindication'],
+                exRecentSurgery30d: !!exclusionsState['exRecentSurgery30d'],
+                exBilateralCarotidRevasc: !!exclusionsState['exBilateralCarotidRevasc'],
+                exPriorIchHistory: !!exclusionsState['exPriorIchHistory'],
+                exBrainBleed2y: !!exclusionsState['exBrainBleed2y'],
+                exSaptContraindication: !!exclusionsState['exSaptContraindication'],
+                exCarotidStenosis50: !!exclusionsState['exCarotidStenosis50'],
+                exPregnancy: !!exclusionsState['exPregnancy'],
+                exIncarcerated: !!exclusionsState['exIncarcerated'],
+                exTrach: !!exclusionsState['exTrach'],
+                exCpapUse14d: !!exclusionsState['exCpapUse14d'],
+                exSecondaryIchOrSah: !!exclusionsState['exSecondaryIchOrSah'],
+                exPriorDementia: !!exclusionsState['exPriorDementia'],
+                exWorseningNeurologic: !!exclusionsState['exWorseningNeurologic'],
+                exDisorderInterfering: !!exclusionsState['exDisorderInterfering'],
+                exPriorUeCondition: !!exclusionsState['exPriorUeCondition'],
+                exLegallyBlind: !!exclusionsState['exLegallyBlind'],
+                exDenseSensoryLoss: !!exclusionsState['exDenseSensoryLoss'],
+                exRecentStroke30d: !!exclusionsState['exRecentStroke30d'],
+                exSeizures: !!exclusionsState['exSeizures'],
+                exSevereSpasticity: !!exclusionsState['exSevereSpasticity'],
+                exArmInjury: !!exclusionsState['exArmInjury'],
+                exSevereAphasiaCognitive: !!exclusionsState['exSevereAphasiaCognitive'],
+                exSevereClaustrophobia: !!exclusionsState['exSevereClaustrophobia'],
+                exBotoxVns3m: !!exclusionsState['exBotoxVns3m'],
+                exAnticoagulation: !!exclusionsState['exAnticoagulation'],
+                exHistoryDvtPe: !!exclusionsState['exHistoryDvtPe'],
+                exRecurrentStroke: !!exclusionsState['exRecurrentStroke'],
+                exPlannedCarotidIntervention: !!exclusionsState['exPlannedCarotidIntervention'],
+                exDrugAlcoholAbuse: !!exclusionsState['exDrugAlcoholAbuse'],
+                exMsParkinsonAlsDementia: !!exclusionsState['exMsParkinsonAlsDementia'],
+                exMajorPsychiatric: !!exclusionsState['exMajorPsychiatric'],
+                exOtherUpperLimbTrial: !!exclusionsState['exOtherUpperLimbTrial'],
+                exCongestiveHeartFailure: !!exclusionsState['exCongestiveHeartFailure'],
+                exEgfr30: !!exclusionsState['exEgfr30']
+            };
+
+            const eligibleList = [];
+            const pendingList = [];
+            const soonList = [];
+            const ineligibleList = [];
+            const closedList = [];
+            const incompleteList = [];
+
+            trials.forEach(trial => {
+                const results = evaluateTrialEligibility(trial, params);
+                if (results.status === 'placeholder') {
+                    incompleteList.push({ trial, errors: results.exclusionReasons, pendingFields: [] });
+                } else if (results.status === 'closed') {
+                    closedList.push({ trial, errors: results.exclusionReasons, pendingFields: [] });
+                } else if (results.status === 'excluded') {
+                    ineligibleList.push({ trial, errors: results.exclusionReasons, pendingFields: [] });
+                } else if (results.status === 'pending') {
+                    pendingList.push({ trial, errors: [], pendingFields: results.pendingFields });
+                } else if (results.status === 'soon') {
+                    soonList.push({ trial, errors: [], pendingFields: results.pendingFields || [] });
+                } else if (results.status === 'eligible') {
+                    eligibleList.push({ trial, errors: [], pendingFields: [] });
+                }
+            });
+
+            // Calculate patient time category and priority sort lists
+            let patientTimeCategory = 'hyperacute';
+            if (onsetDays <= 1) {
+                patientTimeCategory = 'hyperacute';
+            } else if (onsetDays > 1 && onsetDays <= 30) {
+                patientTimeCategory = 'acute_subacute';
+            } else {
+                patientTimeCategory = 'subacute_chronic';
+            }
+
+            function getTimeSortingScore(trialCategory, patientCategory) {
+                if (patientCategory === 'hyperacute') {
+                    if (trialCategory === 'hyperacute') return 3;
+                    if (trialCategory === 'acute_subacute') return 2;
+                    return 1;
+                } else if (patientCategory === 'acute_subacute') {
+                    if (trialCategory === 'acute_subacute') return 3;
+                    if (trialCategory === 'subacute_chronic') return 2;
+                    return 1;
+                } else { // subacute_chronic
+                    if (trialCategory === 'subacute_chronic') return 3;
+                    if (trialCategory === 'acute_subacute') return 2;
+                    return 1;
+                }
+            }
+
+            const sortListByTime = (list) => {
+                list.forEach((item, idx) => {
+                    item.originalIndex = idx;
+                });
+                list.sort((a, b) => {
+                    const scoreA = getTimeSortingScore(a.trial.timeCategory, patientTimeCategory);
+                    const scoreB = getTimeSortingScore(b.trial.timeCategory, patientTimeCategory);
+                    if (scoreB !== scoreA) {
+                        return scoreB - scoreA;
+                    }
+                    return a.originalIndex - b.originalIndex;
+                });
+            };
+
+            sortListByTime(eligibleList);
+            sortListByTime(pendingList);
+            sortListByTime(soonList);
+            sortListByTime(ineligibleList);
+            sortListByTime(closedList);
+            function buildCardsHtml(group, category) {
+                if (group.length === 0) return '';
+
+                let html = '';
+                group.forEach(item => {
+                    const trial = item.trial;
+                    const errors = item.errors;
+                    let badgeClass = 'ineligible';
+                    let badgeText = 'Excluded';
+
+                    if (category === 'eligible') { badgeClass = 'eligible'; badgeText = 'Refer / Likely Candidate'; }
+                    else if (category === 'pending') { badgeClass = 'soon'; badgeText = 'Possible Candidate'; }
+                    else if (category === 'soon') { badgeClass = 'soon'; badgeText = 'Enrolling Soon'; }
+                    else if (category === 'closed') { badgeClass = 'closed'; badgeText = 'Closed'; }
+                    else if (category === 'incomplete') { badgeClass = 'closed'; badgeText = 'Incomplete'; }
+                    else if (trial.status === 'placeholder') { badgeClass = 'closed'; badgeText = 'Placeholder'; }
+
+                    const matched = trial.matchedCriteriaText ? trial.matchedCriteriaText(params) : [];
+                    const pending = trial.pendingCriteriaText ? trial.pendingCriteriaText(params) : [];
+
+                    let notesHtml = '';
+                    if (errors.length > 0) {
+                        notesHtml += `
+                            <div class="output-notes-box fail-reasons">
+                                <strong>Exclusion Reasons:</strong>
+                                <ul>` + errors.map(function(e) { return '<li>' + e + '</li>'; }).join('') + `</ul>
+                            </div>
+                        `;
+                    } else {
+                        if (item.pendingFields && item.pendingFields.length > 0) {
+                            notesHtml += `
+                                <div class="output-notes-box pending-reasons" style="background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); padding: 0.5rem 0.75rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-main);">
+                                    <strong>Pending Bedside Inputs:</strong> ` + item.pendingFields.join(', ') + `
+                                </div>
+                            `;
+                        }
+                        notesHtml += `
+                            <div class="output-notes-box">
+                                <strong>Why It Matched:</strong>
+                                <ul>` + matched.map(function(m) { return '<li>' + m + '</li>'; }).join('') + `</ul>
+                            </div>
+                            <div class="output-notes-box">
+                                <strong>Pending Bedside Confirmations:</strong>
+                                <ul>` + pending.map(function(p) { return '<li>' + p + '</li>'; }).join('') + `</ul>
+                            </div>
+                        `;
+                    }
+
+                    const nctString = trial.externalMetadata.nct ? ' | ' + trial.externalMetadata.nct : '';
+
+                    let timeRowHtml = '';
+                    if (trial.enrollmentWindowText && trial.enrollmentWindowText !== 'N/A') {
+                        let criticalBadge = '';
+                        if (trial.timeCategory === 'hyperacute') {
+                            criticalBadge = `<span class="time-critical-badge">⚡ Time-Sensitive (Hyperacute)</span>`;
+                        }
+                        timeRowHtml = `
+                            <div class="time-window-row">
+                                <span class="time-window-badge">
+                                    ⏱️ Onset Window: <strong>` + trial.enrollmentWindowText + `</strong>
+                                </span>
+                                ` + criticalBadge + `
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div class="output-card ` + category + `">
+                            <div class="output-header">
+                                <div class="output-title-group" style="cursor:pointer;" role="button" tabindex="0" onclick="openTrialDetails('` + trial.acronym + `')" onkeydown="handleKeyboardSelect(event, () => openTrialDetails('` + trial.acronym + `'))">
+                                    <span class="output-title" style="text-decoration: underline; text-decoration-style: dotted;">` + trial.acronym + `</span>
+                                    <span class="output-subtitle">` + trial.exactFullStudyName + nctString + `</span>
+                                </div>
+                                <span class="output-badge ` + badgeClass + `">` + badgeText + `</span>
+                            </div>
+                            ` + timeRowHtml + `
+                            <p class="output-summary">` + trial.conciseBedsideSummary + `</p>
+                            ` + notesHtml + `
+                            <div class="output-referral">
+                                <strong>Referral Pathway:</strong> ` + trial.pathway + `
+                            </div>
+                            <button class="btn-detail-trigger" onclick="openTrialDetails('` + trial.acronym + `')">
+                                View Trial Details & Protocol ↗
+                            </button>
+                        </div>
+                    `;
+                });
+                return html;
+            }
+
+            let priorityText = '';
+            if (patientTimeCategory === 'hyperacute') {
+                priorityText = '⚡ Hyperacute Phase (0–24 hours)';
+            } else if (patientTimeCategory === 'acute_subacute') {
+                priorityText = '📅 Acute to Subacute Phase (24 hours – 30 days)';
+            } else {
+                priorityText = '🔄 Subacute to Chronic Phase (30+ days)';
+            }
+
+            let resultsHtml = `
+                <div class="time-priority-banner">
+                    <div>
+                        Prioritizing matches for: <strong style="color: var(--accent-secondary); font-weight: 700;">` + priorityText + `</strong>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Sorted by onset window proximity</span>
+                </div>
+            `;
+
+            if (eligibleList.length > 0) {
+                resultsHtml += '<h3 class="results-section-header" style="color:var(--success);">🟢 Likely Candidates</h3>';
+                resultsHtml += buildCardsHtml(eligibleList, 'eligible');
+            }
+            if (pendingList.length > 0) {
+                resultsHtml += '<h3 class="results-section-header" style="color:var(--warning);">🟡 Possible Candidates (Pending Inputs)</h3>';
+                resultsHtml += buildCardsHtml(pendingList, 'pending');
+            }
+            if (soonList.length > 0) {
+                resultsHtml += '<h3 class="results-section-header" style="color:var(--warning);">⏳ Enrolling Soon / Future Match</h3>';
+                resultsHtml += buildCardsHtml(soonList, 'soon');
+            }
+
+            const hasExcludedOrClosed = ineligibleList.length > 0 || closedList.length > 0 || incompleteList.length > 0;
+            if (hasExcludedOrClosed) {
+                resultsHtml += `
+                    <details class="excluded-closed-details" style="margin-top: 1.5rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                        <summary style="cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); padding: 0.5rem; background: rgba(255,255,255,0.02); border-radius: 4px; user-select: none;">
+                            🔴 Excluded / Closed Trials (${ineligibleList.length + closedList.length + incompleteList.length})
+                        </summary>
+                        <div style="margin-top: 1rem;">
+                `;
+
+                if (ineligibleList.length > 0) {
+                    resultsHtml += '<h3 class="results-section-header" style="color:var(--text-muted); margin-top:0;">Excluded / Ineligible</h3>';
+                    resultsHtml += buildCardsHtml(ineligibleList, 'ineligible');
+                }
+                if (closedList.length > 0) {
+                    resultsHtml += '<h3 class="results-section-header" style="color:var(--text-muted);">Closed / Not Enrolling</h3>';
+                    resultsHtml += buildCardsHtml(closedList, 'closed');
+                }
+                if (incompleteList.length > 0) {
+                    resultsHtml += '<h3 class="results-section-header" style="color:var(--text-muted);">Source Incomplete / Placeholders</h3>';
+                    resultsHtml += buildCardsHtml(incompleteList, 'incomplete');
+                }
+
+                resultsHtml += `
+                        </div>
+                    </details>
+                `;
+            }
+
+            listContainer.innerHTML = resultsHtml;
+
+            // Build Epic Briefing Note
+            let briefing = '=== STROKE SCREENER REFERRAL NOTE ===\n';
+            briefing += 'Classification: ' + p_classification.toUpperCase() + ' | Onset: ' + p_onsetVal + ' ' + p_onsetUnit + ' (LKW)\n';
+            briefing += 'Age: ' + p_age + ' | NIHSS: ' + p_nihss + ' | mRS: ' + p_preMrs + '\n';
+            briefing += '--------------------------------------------------\n';
+
+            if (eligibleList.length > 0) {
+                briefing += '🟢 REFERRAL CANDIDATES:\n';
+                eligibleList.forEach(function(item) {
+                    const trial = item.trial;
+                    briefing += ' - ' + trial.acronym + ' (' + (trial.externalMetadata.nct || 'No NCT') + ')\n';
+                    briefing += '   Pathway: ' + trial.pathway + '\n';
+                });
+            }
+            if (pendingList.length > 0) {
+                briefing += '🟡 POSSIBLE CANDIDATES (PENDING INPUTS):\n';
+                pendingList.forEach(function(item) {
+                    const trial = item.trial;
+                    briefing += ' - ' + trial.acronym + ' (' + (trial.externalMetadata.nct || 'No NCT') + ')\n';
+                    briefing += '   Pending fields: ' + item.pendingFields.join(', ') + '\n';
+                });
+            }
+            if (soonList.length > 0) {
+                briefing += '⏳ ENROLLING SOON / FUTURE MATCH:\n';
+                soonList.forEach(function(item) {
+                    const trial = item.trial;
+                    briefing += ' - ' + trial.acronym + ' (' + (trial.externalMetadata.nct || 'No NCT') + ')\n';
+                    briefing += '   Pathway: ' + trial.pathway + '\n';
+                });
+            }
+            if (eligibleList.length === 0 && pendingList.length === 0 && soonList.length === 0) {
+                briefing += '❌ No active study matches found for current patient parameters.\n';
+            }
+
+            document.getElementById('wz_epic_output').innerText = briefing;
+            updateBriefingCopyState();
+        }
+
+        function getBriefingPrerequisites() {
+            const missing = [];
+            if (!p_classification || p_classification === 'unselected') missing.push('stroke/event type');
+            if (p_age === 'unselected') missing.push('age');
+            if (p_preMrs === 'unselected') missing.push('pre-stroke mRS');
+
+            let onsetHours = p_onsetVal;
+            if (p_onsetUnit === 'days') onsetHours *= 24;
+            if (p_onsetUnit === 'months') onsetHours *= 30 * 24;
+            const needsNihss = p_classification === 'ischemic' || (p_classification === 'ich' && onsetHours <= 16);
+            if (needsNihss && p_nihss === 'unselected') missing.push('NIHSS');
+            return missing;
+        }
+
+        function updateBriefingCopyState() {
+            const button = document.getElementById('copy_briefing_btn');
+            const note = document.getElementById('briefing_prerequisite');
+            if (!button || !note) return;
+            const missing = getBriefingPrerequisites();
+            button.disabled = missing.length > 0;
+            note.textContent = missing.length
+                ? `Complete ${missing.join(', ')} to enable copying.`
+                : 'Minimum pathway complete. The current synthetic briefing note is ready to copy.';
+        }
+
+        function copyWzEpicNote() {
+            const button = document.getElementById('copy_briefing_btn');
+            const note = document.getElementById('wz_epic_output')?.innerText || '';
+            if (!button || button.disabled || !note.trim()) return;
+            navigator.clipboard.writeText(note)
+                .then(() => showToast('Synthetic briefing note copied.'))
+                .catch(() => showToast('Copy failed. Select and copy the note manually.'));
+        }
+
+        let modalTriggerElement = null;
+
+        function openTrialDetails(acronym) {
+            const trial = trials.find(t => t.acronym === acronym);
+            if (!trial) return;
+
+            document.getElementById('modal_trial_acronym').innerText = trial.acronym;
+            document.getElementById('modal_trial_fullname').innerText = trial.exactFullStudyName;
+
+            let badgeClass = 'ineligible';
+            let badgeText = 'Closed';
+            if (trial.status === 'enrolling') { badgeClass = 'enrolling'; badgeText = 'Enrolling'; }
+            else if (trial.status === 'soon') { badgeClass = 'soon'; badgeText = 'Soon'; }
+            else if (trial.status === 'placeholder') { badgeClass = 'closed'; badgeText = 'Incomplete'; }
+
+            const gapHtml = (trial.sourceGaps && trial.sourceGaps.length > 0) ? `
+                <div class="source-gap-alert" style="margin-top:0.75rem; background:rgba(239, 68, 68, 0.1); border-left:3px solid var(--danger); padding:0.5rem 0.75rem; border-radius:4px; font-size:0.75rem; color:var(--text-main);">
+                    <strong>Registry / Protocol Verification Notes:</strong>
+                    <ul style="padding-left:1rem; margin-top:0.15rem; margin-bottom:0;">
+                        ` + trial.sourceGaps.map(function(g) { return '<li>' + g + '</li>'; }).join('') + `
+                    </ul>
+                </div>
+            ` : '';
+
+            const registryLink = trial.externalMetadata.nct ? `
+                <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary); text-decoration:none; font-weight:700; text-decoration: underline;">
+                    ` + trial.externalMetadata.nct + ` ↗
+                </a>
+            ` : 'N/A';
+
+            let bodyHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Status:</span>
+                    <span class="output-badge ` + badgeClass + `">` + badgeText + `</span>
+                </div>
+                <div class="db-meta">
+                    <div class="db-meta-item" style="grid-column: 1 / -1;">
+                        <strong>Clinical Hypothesis:</strong>
+                        <p style="margin: 0.25rem 0 0.75rem 0; font-size:0.8rem; color:var(--text-main);">` + (trial.sourceHypothesisText || 'Not specified in source') + `</p>
+                    </div>
+                    <div class="db-meta-item" style="grid-column: 1 / -1; margin-bottom: 0.75rem;">
+                        <strong>Public Registry (NCT Link):</strong>
+                        <p style="margin: 0.25rem 0 0 0; font-size:0.8rem;">` + registryLink + `</p>
+                    </div>
+                </div>
+                <div class="db-meta">
+                    <div class="db-meta-item">
+                        <span class="db-list-title">Canonical Inclusion Criteria</span>
+                        <ul class="db-criteria-list" style="padding-left:1.1rem; margin-top:0.25rem; font-size:0.75rem; color:var(--text-main);">
+                            ` + trial.exactInclusionCriteria.map(function(c) { return '<li style="margin-bottom:0.25rem;">' + c + '</li>'; }).join('') + `
+                        </ul>
+                    </div>
+                    <div class="db-meta-item">
+                        <span class="db-list-title">Canonical Exclusion Criteria</span>
+                        <ul class="db-criteria-list" style="padding-left:1.1rem; margin-top:0.25rem; font-size:0.75rem; color:var(--text-main);">
+                            ` + (trial.exactExclusionCriteria.length > 0 ? trial.exactExclusionCriteria.map(function(c) { return '<li style="margin-bottom:0.25rem;">' + c + '</li>'; }).join('') : '<li>None specified in source</li>') + `
+                        </ul>
+                    </div>
+                </div>
+                ` + gapHtml + `
+                <div style="margin-top:1rem; border-top:1px solid var(--card-border); padding-top:0.75rem; font-size:0.8rem; color:var(--text-main);">
+                    <strong>Referral Pathway:</strong> ` + trial.pathway + `
+                </div>
+            `;
+
+            document.getElementById('modal_trial_body').innerHTML = bodyHtml;
+
+            modalTriggerElement = document.activeElement;
+
+            const modal = document.getElementById('trial_details_modal');
+            const mainWrapper = document.getElementById('app_main_wrapper');
+
+            modal.removeAttribute('inert');
+            modal.removeAttribute('aria-hidden');
+            mainWrapper.setAttribute('inert', 'true');
+            mainWrapper.setAttribute('aria-hidden', 'true');
+
+            modal.classList.add('active');
+            modal.querySelector('.modal-close-btn').focus();
+        }
+
+        function closeTrialDetailsModal() {
+            const modal = document.getElementById('trial_details_modal');
+            const mainWrapper = document.getElementById('app_main_wrapper');
+
+            modal.classList.remove('active');
+            modal.setAttribute('inert', 'true');
+            modal.setAttribute('aria-hidden', 'true');
+            mainWrapper.removeAttribute('inert');
+            mainWrapper.removeAttribute('aria-hidden');
+
+            if (modalTriggerElement && typeof modalTriggerElement.focus === 'function') {
+                modalTriggerElement.focus();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('trial_details_modal');
+                if (modal.classList.contains('active')) {
+                    closeTrialDetailsModal();
+                }
+            }
+        });
+        // Accordion Database Init
+        function initDatabase() {
+            const dbList = document.getElementById('database_list');
+            dbList.innerHTML = '';
+
+            trials.forEach((trial, index) => {
+                const item = document.createElement('div');
+                item.className = 'accordion-item ' + (index === 0 ? 'active' : '');
+
+                let badgeClass = 'ineligible';
+                let badgeText = 'Closed';
+                if (trial.status === 'enrolling') { badgeClass = 'enrolling'; badgeText = 'Enrolling'; }
+                else if (trial.status === 'soon') { badgeClass = 'soon'; badgeText = 'Soon'; }
+                else if (trial.status === 'placeholder') { badgeClass = 'closed'; badgeText = 'Incomplete'; }
+
+                const gapHtml = (trial.sourceGaps && trial.sourceGaps.length > 0) ? `
+                    <div class="source-gap-alert">
+                        <strong>Registry / Protocol Verification Notes:</strong>
+                        <ul style="padding-left:1rem; margin-top:0.15rem;">
+                            ` + trial.sourceGaps.map(function(g) { return '<li>' + g + '</li>'; }).join('') + `
+                        </ul>
+                    </div>
+                ` : '';
+
+                const registryLink = trial.externalMetadata.nct ? `
+                    <a href="` + trial.externalMetadata.registryUrl + `" target="_blank" rel="noopener noreferrer" style="color:var(--accent-secondary); text-decoration:none; font-weight:700;">
+                        ` + trial.externalMetadata.nct + ` ↗
+                    </a>
+                ` : 'N/A';
+
+                item.innerHTML = `
+                    <div class="accordion-header" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccordion(this)" onkeydown="handleKeyboardSelect(event, () => toggleAccordion(this))">
+                        <span>` + trial.acronym + ` - ` + trial.exactFullStudyName + `</span>
+                        <span class="output-badge ` + badgeClass + `">` + badgeText + `</span>
+                    </div>
+                    <div class="accordion-body">
+                        <div class="db-meta">
+                            <div class="db-meta-item">
+                                <strong>Clinical Hypothesis:</strong>
+                                <p>` + (trial.sourceHypothesisText || 'Not specified in source') + `</p>
+                            </div>
+                            <div class="db-meta-item">
+                                <strong>Public Registry (NCT):</strong>
+                                <p>` + registryLink + `</p>
+                            </div>
+                        </div>
+                        <div class="db-meta">
+                            <div class="db-meta-item">
+                                <span class="db-list-title">Canonical Inclusion Criteria (Source)</span>
+                                <ul class="db-criteria-list">
+                                    ` + trial.exactInclusionCriteria.map(function(c) { return '<li>' + c + '</li>'; }).join('') + `
+                                </ul>
+                            </div>
+                            <div class="db-meta-item">
+                                <span class="db-list-title">Canonical Exclusion Criteria (Source)</span>
+                                <ul class="db-criteria-list">
+                                    ` + (trial.exactExclusionCriteria.length > 0 ? trial.exactExclusionCriteria.map(function(c) { return '<li>' + c + '</li>'; }).join('') : '<li>None specified in source</li>') + `
+                                </ul>
+                            </div>
+                        </div>
+                        ` + gapHtml + `
+                        <div style="margin-top:0.75rem; border-top:1px solid var(--card-border); padding-top:0.5rem; font-size:0.75rem;">
+                            <strong>Referral Pathway:</strong> ` + trial.pathway + `
+                        </div>
+                    </div>
+                `;
+                dbList.appendChild(item);
+            });
+            filterDatabase();
+        }
+
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const isActive = item.classList.contains('active');
+            document.querySelectorAll('.accordion-item').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.accordion-header').forEach(h => h.setAttribute('aria-expanded', 'false'));
+            if (!isActive) {
+                item.classList.add('active');
+                header.setAttribute('aria-expanded', 'true');
+            }
+        }
+
+        // Accordion Search Filter
+        function filterDatabase() {
+            const query = document.getElementById('db_search').value.toLowerCase();
+            const status = document.getElementById('db_filter').value;
+            const items = document.querySelectorAll('.accordion-item');
+            let visibleCount = 0;
+
+            items.forEach((item, idx) => {
+                const trial = trials[idx];
+                const text = (trial.acronym + ' ' + trial.exactFullStudyName + ' ' + trial.sourceHypothesisText + ' ' + trial.exactInclusionCriteria.join(' ') + ' ' + trial.exactExclusionCriteria.join(' ') + ' ' + trial.pathway).toLowerCase();
+
+                const matchesQuery = text.includes(query);
+                const matchesStatus = status === 'all' || trial.status === status;
+
+                if (matchesQuery && matchesStatus) {
+                    item.style.display = 'block';
+                    visibleCount += 1;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            const count = document.getElementById('database_result_count');
+            const empty = document.getElementById('database_empty');
+            count.textContent = `${visibleCount} ${visibleCount === 1 ? 'study' : 'studies'} shown`;
+            empty.hidden = visibleCount !== 0;
+        }
+
+        function clearDatabaseSearch() {
+            const search = document.getElementById('db_search');
+            search.value = '';
+            document.getElementById('db_filter').value = 'all';
+            filterDatabase();
+            search.focus();
+        }
+
+        // Tab Switcher
+        function switchTab(tabId, moveFocus = false) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                const selected = tab.id === `${tabId}_tab`;
+                tab.classList.remove('active');
+                tab.setAttribute('aria-hidden', String(!selected));
+                tab.hidden = !selected;
+                if (selected) tab.classList.add('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                const selected = nav.id === `nav_${tabId}`;
+                nav.classList.remove('active');
+                nav.setAttribute('aria-selected', String(selected));
+                nav.tabIndex = selected ? 0 : -1;
+                if (selected) {
+                    nav.classList.add('active');
+                    if (moveFocus) nav.focus();
+                }
+            });
+        }
+
+        // Keyboard Handler
+        function handleKeyboardSelect(event, callback) {
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                callback();
+            }
+        }
+
+
+
+        function resetFlowsheet() {
+            p_classification = '';
+            p_stroke_group = '';
+            p_event_type = '';
+            exclusionsState = {};
+            p_metricsInteracted = true; // Always evaluate dynamically
+
+            document.querySelectorAll('.option-card').forEach(card => card.classList.remove('active'));
+
+            document.getElementById('event_type_sub_container').style.display = 'none';
+            document.getElementById('flow_sec_2').style.display = 'none';
+            document.getElementById('flow_sec_3').style.display = 'none';
+
+            document.getElementById('dynamic_metrics_container').innerHTML = '';
+            const exclContainer = document.getElementById('dynamic_exclusions_container');
+            if (exclContainer) exclContainer.innerHTML = '';
+
+            p_onsetVal = 2;
+            p_onsetUnit = 'hours';
+            p_age = 'unselected';
+            p_nihss = 'unselected';
+            p_aspects = 'unselected';
+            p_gcs = 'unselected';
+            p_preMrs = 'unselected';
+            p_vessel = 'unselected';
+            p_etiology = 'unselected';
+            p_ich_location = 'unselected';
+            p_volume = 'unselected';
+            p_statin = 'unselected';
+            p_afibHistory = 'unselected';
+            p_takingOac = 'unselected';
+            p_language = 'unselected';
+            p_rehab = 'unselected';
+            p_self_consent = 'unselected';
+            p_availability_54w = 'unselected';
+            p_ueWeakness = 'unselected';
+            p_unilateralSymptomatic = 'unselected';
+            p_anteriorCirculation = 'unselected';
+            p_presentedWithin24h = 'unselected';
+            p_singleAntiplateletSoc = 'unselected';
+
+            const slider = document.getElementById('wz_onset');
+            if (slider) {
+                slider.min = "0";
+                slider.max = "72";
+                slider.step = "0.5";
+                slider.value = "2";
+            }
+
+            calculateEligibility();
+        }
+
+        function acknowledgePublicDemo() {
+            try {
+                localStorage.setItem('strokeTrialsScreenerDemoSeen', 'true');
+            } catch {
+                // The disclosure remains usable if storage is unavailable.
+            }
+            document.getElementById('publicDemoNotice')?.removeAttribute('open');
+        }
+
+        function syncHeaderUtilities() {
+            const utilities = document.getElementById('headerUtilities');
+            if (!utilities) return;
+            if (window.matchMedia('(max-width: 639px)').matches) {
+                utilities.setAttribute('open', '');
+            } else {
+                utilities.removeAttribute('open');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // ============================================
+        // URL HASH AUTO-POPULATE (approved/private deployments only)
+        // ============================================
+        const PUBLIC_DEMO_MODE = /(^|\.)github\.io$/i.test(window.location.hostname || '');
+        // Accepts patient context from a parent app via URL hash
+        // (e.g., when embedded as an iframe in the stroke decision-support PWA).
+        // Hash format: #kind=ischemic_stroke&age=72&nihss=12&aspects=8&pre_mrs=1&onset_val=2&onset_unit=hours
+        //   kind        : ischemic_stroke | tia | ich
+        //   age         : integer 18-120
+        //   nihss       : integer 0-42
+        //   aspects     : integer 0-10
+        //   pre_mrs     : integer 0-5
+        //   onset_val   : number (interpreted in onset_unit)
+        //   onset_unit  : hours | days | months
+        // No-ops when hash is empty — screener remains fully usable standalone.
+        function bootstrapFromHash() {
+            try {
+                if (PUBLIC_DEMO_MODE) {
+                    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+                    return;
+                }
+                const hash = (location.hash || '').replace(/^#/, '');
+                if (!hash) return;
+                const params = new URLSearchParams(hash);
+                const kind = params.get('kind');
+                if (!kind) return;
+
+                // 1) Stroke group (selectStrokeGroup resets metrics, so call it first)
+                if (kind === 'ich') {
+                    const groupBtn = document.querySelector('#flow_sec_1 .group-btn[onclick*="\'ich\'"]');
+                    selectStrokeGroup('ich', groupBtn);
+                } else if (kind === 'ischemic_stroke' || kind === 'tia') {
+                    const groupBtn = document.querySelector('#flow_sec_1 .group-btn[onclick*="\'ischemic_tia\'"]');
+                    selectStrokeGroup('ischemic_tia', groupBtn);
+                    // 2) Event type within ischemic_tia
+                    const eventBtn = document.querySelector(`#event_type_sub_container .option-card[onclick*="'${kind}'"]`);
+                    selectEventType(kind, eventBtn);
+                } else {
+                    return; // unknown kind — bail out
+                }
+
+                // 3) Onset (set before metrics so categories/exact display reflect it)
+                const onsetVal = parseFloat(params.get('onset_val'));
+                const onsetUnit = params.get('onset_unit');
+                if (Number.isFinite(onsetVal) && (onsetUnit === 'hours' || onsetUnit === 'days' || onsetUnit === 'months')) {
+                    p_onsetVal = onsetVal;
+                    p_onsetUnit = onsetUnit;
+                    const slider = document.getElementById('wz_onset');
+                    if (slider) slider.value = String(onsetVal);
+                    // Update onset-unit pill highlight if exists
+                    const unitBtns = ['hours', 'days', 'months'].map(u => document.getElementById('wz_onset_' + u + '_btn'));
+                    unitBtns.forEach(btn => { if (btn) btn.classList.remove('active'); });
+                    const activeUnitBtn = document.getElementById('wz_onset_' + onsetUnit + '_btn');
+                    if (activeUnitBtn) activeUnitBtn.classList.add('active');
+                    if (typeof setupOnsetPresets === 'function') setupOnsetPresets();
+                }
+
+                // 4) Patient metrics — set p_* globals
+                const setIntMetric = (key, min, max) => {
+                    const raw = params.get(key);
+                    if (raw === null || raw === '') return null;
+                    const n = parseInt(raw, 10);
+                    if (!Number.isFinite(n)) return null;
+                    if (n < min || n > max) return null;
+                    return n;
+                };
+                const age = setIntMetric('age', 18, 120);
+                const nihss = setIntMetric('nihss', 0, 42);
+                const aspects = setIntMetric('aspects', 0, 10);
+                const preMrs = setIntMetric('pre_mrs', 0, 5);
+                if (age !== null) p_age = age;
+                if (nihss !== null) p_nihss = nihss;
+                if (aspects !== null) p_aspects = aspects;
+                if (preMrs !== null) p_preMrs = preMrs;
+
+                // 5) Re-render metrics + exclusions so input fields reflect new p_* values,
+                //    then recalculate eligibility verdict.
+                if (typeof compileDynamicMetrics === 'function') compileDynamicMetrics();
+                if (typeof compileDynamicExclusions === 'function') compileDynamicExclusions();
+                if (typeof calculateEligibility === 'function') calculateEligibility();
+            } catch (err) {
+                // Fail silent — embed context shouldn't break standalone use.
+                console.warn('bootstrapFromHash failed:', err);
+            }
+        }
+
+        // Init
+        window.addEventListener('load', () => {
+            initDatabase();
+            calculateEligibility();
+            initInstallButton();
+            bootstrapFromHash();
+            syncHeaderUtilities();
+            try {
+                if (localStorage.getItem('strokeTrialsScreenerDemoSeen') === 'true') {
+                    document.getElementById('publicDemoNotice')?.removeAttribute('open');
+                }
+            } catch {
+                // Keep the full first-exposure notice when storage cannot be read.
+            }
+        });
+        window.addEventListener('resize', syncHeaderUtilities);
+        // Respond to parent updating the iframe hash without a full reload
+        window.addEventListener('hashchange', bootstrapFromHash);
+
+        // SW registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registered.', reg.scope))
+                .catch(err => console.log('SW registration failed.', err));
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('install_btn');
+            if (installBtn) {
+                installBtn.style.display = 'inline-flex';
+                installBtn.onclick = () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            installBtn.style.display = 'none';
+                        }
+                        deferredPrompt = null;
+                    });
+                };
+            }
+        });
+
+        function getMobileOS() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            if (/android/i.test(userAgent)) {
+                return 'android';
+            }
+            if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                return 'ios';
+            }
+            if (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Macintosh/.test(userAgent)) {
+                return 'ios';
+            }
+            return 'other';
+        }
+
+        function initInstallButton() {
+            const installBtn = document.getElementById('install_btn');
+            if (!installBtn) return;
+
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (isStandalone) {
+                installBtn.style.display = 'none';
+                return;
+            }
+
+            installBtn.style.display = 'inline-flex';
+            installBtn.onclick = () => {
+                showPwaInstallModal();
+            };
+        }
+
+        function showPwaInstallModal() {
+            const modal = document.getElementById('pwa_install_modal');
+            const instructions = document.getElementById('pwa_install_instructions');
+            if (!modal || !instructions) return;
+
+            const os = getMobileOS();
+            let html = '';
+
+            if (os === 'ios') {
+                html = `
+                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                        <p style="margin-bottom: 0.5rem;">Add this web app to your iPhone or iPad for quick demo access and offline capabilities:</p>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">1</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">
+                                Tap the <strong>Share</strong> button in Safari's bottom toolbar.
+                                <div style="margin-top:0.4rem; color:var(--text-muted); font-size:0.75rem; display:flex; align-items:center; gap:0.25rem;">
+                                    (Square with upward arrow: <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:none; stroke:var(--accent-secondary); stroke-width:2.5; display:inline-block; vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>)
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">2</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Scroll down the menu and select <strong>Add to Home Screen</strong>.</div>
+                        </div>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">3</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Tap <strong>Add</strong> in the top-right corner to complete installation.</div>
+                        </div>
+                    </div>
+                `;
+            } else if (os === 'android') {
+                html = `
+                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                        <p style="margin-bottom: 0.5rem;">Install this web app on your Android device for offline demo use:</p>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">1</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">
+                                Tap Chrome's <strong>Menu</strong> button in the top-right corner.
+                                <div style="margin-top:0.4rem; color:var(--text-muted); font-size:0.75rem; display:flex; align-items:center; gap:0.25rem;">
+                                    (Three vertical dots: <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:var(--accent-secondary); display:inline-block; vertical-align:middle;"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>)
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">2</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Tap <strong>Install app</strong> or <strong>Add to Home screen</strong> in the menu.</div>
+                        </div>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">3</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Confirm by tapping <strong>Install</strong> or <strong>Add</strong> in the prompt.</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                        <p style="margin-bottom: 0.5rem;">Install this web app on your device for offline demo use:</p>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">1</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Look at your browser's address bar for an <strong>Install icon</strong> (often a screen with a down arrow, or a plus icon).</div>
+                        </div>
+                        <div style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(255,255,255,0.02); padding:0.75rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <div style="background:rgba(92, 96, 245, 0.1); color:var(--accent-primary); border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-weight:bold; flex-shrink:0;">2</div>
+                            <div style="font-size:0.8rem; line-height:1.4;">Or open your browser's menu (three dots or lines) and select <strong>Install app</strong> or <strong>Add to Applications</strong>.</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            instructions.innerHTML = html;
+
+            modal.classList.add('active');
+            modal.removeAttribute('inert');
+            modal.setAttribute('aria-hidden', 'false');
+            modalTriggerElement = document.activeElement;
+            modal.querySelector('button').focus();
+        }
+
+        function closePwaInstallModal() {
+            const modal = document.getElementById('pwa_install_modal');
+            if (!modal) return;
+            modal.classList.remove('active');
+            modal.setAttribute('inert', '');
+            modal.setAttribute('aria-hidden', 'true');
+            if (modalTriggerElement) {
+                modalTriggerElement.focus();
+                modalTriggerElement = null;
+            }
+        }
+
+        document.querySelector('.bottom-nav')?.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const tabs = Array.from(document.querySelectorAll('.nav-item'));
+            const currentIndex = tabs.indexOf(document.activeElement);
+            let nextIndex = currentIndex;
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+            if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+            switchTab(tabs[nextIndex].id.replace('nav_', ''), true);
+        });
