@@ -15,12 +15,12 @@ test('screener/database tabs use one roving tab stop and a hidden inactive panel
   assert.match(source, /ArrowLeft[\s\S]*?ArrowRight/);
 });
 
-test('copy gating, database empty state, and compact demo disclosure are present', () => {
+test('copy gating and database empty state are present without the demo banner', () => {
   assert.match(source, /id="copy_briefing_btn"[\s\S]*?disabled/);
   assert.match(source, /function getBriefingPrerequisites\(\)/);
   assert.match(source, /id="database_result_count"[\s\S]*?aria-live="polite"/);
   assert.match(source, /id="database_empty"[\s\S]*?Clear search/);
-  assert.match(source, /id="publicDemoNotice"[\s\S]*?<summary>/);
+  assert.doesNotMatch(source, /publicDemoNotice|public-demo-|acknowledgePublicDemo/);
 });
 
 test('desktop navigation is colocated with the header and install is secondary', () => {

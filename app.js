@@ -2515,15 +2515,6 @@
             calculateEligibility();
         }
 
-        function acknowledgePublicDemo() {
-            try {
-                localStorage.setItem('strokeTrialsScreenerDemoSeen', 'true');
-            } catch {
-                // The disclosure remains usable if storage is unavailable.
-            }
-            document.getElementById('publicDemoNotice')?.removeAttribute('open');
-        }
-
         function syncHeaderUtilities() {
             const utilities = document.getElementById('headerUtilities');
             if (!utilities) return;
@@ -2634,13 +2625,6 @@
             initInstallButton();
             bootstrapFromHash();
             syncHeaderUtilities();
-            try {
-                if (localStorage.getItem('strokeTrialsScreenerDemoSeen') === 'true') {
-                    document.getElementById('publicDemoNotice')?.removeAttribute('open');
-                }
-            } catch {
-                // Keep the full first-exposure notice when storage cannot be read.
-            }
         });
         window.addEventListener('resize', syncHeaderUtilities);
         // Respond to parent updating the iframe hash without a full reload
