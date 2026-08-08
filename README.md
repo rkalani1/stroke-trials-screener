@@ -9,6 +9,10 @@ A mobile-first Progressive Web App for demonstrating stroke-trial eligibility lo
 - The public site is not an official system, recruitment workflow, trial source of truth, or bedside clinical tool.
 - Verify current trial status, eligibility criteria, and contact workflow against study-owner-approved and IRB/HSD-approved materials before any clinical or recruitment action.
 
+## AI-Assisted Update Gate
+
+Use `docs/automedbench-lite.md` before accepting AI-generated changes to eligibility logic, trial criteria, URL/prefill behavior, offline behavior, or public-demo copy. The gate requires S1 Plan, S2 Setup, S3 Validate, S4 Execute, and S5 Submit with synthetic pass/fail cases and no-PHI confirmation.
+
 ## Features
 
 1. **Eligibility logic demo:** Interface to test de-identified or synthetic parameters such as onset/LKW, NIHSS, ASPECTS, and pre-mRS against trial criteria.
